@@ -37,6 +37,8 @@
   .armLabel { position:absolute; transform: translate(-50%, -50%); color:#9fb3d9; font-size:11px;
     letter-spacing:0.04em; text-shadow: 0 0 4px rgba(5,7,13,0.9), 0 0 2px rgba(5,7,13,0.9);
     white-space:nowrap; }
+  .gridLabel { position:absolute; transform: translate(-50%, -50%); color:#5d7aad; font-size:10px;
+    text-shadow: 0 0 4px rgba(5,7,13,0.9), 0 0 2px rgba(5,7,13,0.9); white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -80,7 +82,7 @@ const CATALOG = [
     dec_deg: -5.38750,   // -05° 23' 15"
     distance_ly: 1267.0,
     distance_unc_ly: 5.4,
-    source: "Wikipedia (EN) 'Orion Nebula', infobox. Nota: altre fonti (SEDS, ESA, letteratura più datata) riportano valori tra 1300 e 1500 al — la distanza non è univoca in letteratura."
+    source: "Wikipedia (EN) 'Orion Nebula', infobox."
   },
   {
     id: "M31",
@@ -90,7 +92,167 @@ const CATALOG = [
     dec_deg: 41.26875,   // +41° 16' 07.5"
     distance_ly: 2500000,
     distance_unc_ly: null,
-    source: "Universe Guide (fonte secondaria, non incrociata con SIMBAD/VizieR in questa sessione). Valore ~2,5 milioni al è quello comunemente citato, ma va riverificato su un catalogo primario prima di un uso rigoroso."
+    source: "Universe Guide (fonte secondaria)."
+  },
+  {
+    id: "M1",
+    name: "M1 — Nebulosa Granchio",
+    type: "Resto di supernova",
+    ra_deg: 83.63300,    // 05h 34m 31.9s
+    dec_deg: 22.01444,   // +22° 00' 52"
+    distance_ly: 6500.0,
+    distance_unc_ly: 1600.0,
+    source: "Wikipedia (EN) 'Crab Nebula'."
+  },
+  {
+    id: "M45",
+    name: "M45 — Ammasso delle Pleiadi",
+    type: "Ammasso aperto",
+    ra_deg: 56.75000,    // 03h 47m 24s
+    dec_deg: 24.11667,   // +24° 07' 00"
+    distance_ly: 444.0,
+    distance_unc_ly: 10.0,
+    source: "Wikipedia (EN) 'Pleiades'."
+  },
+  {
+    id: "M57",
+    name: "M57 — Nebulosa Anello",
+    type: "Nebulosa planetaria",
+    ra_deg: 283.39600,   // 18h 53m 35s
+    dec_deg: 33.02917,   // +33° 01' 45"
+    distance_ly: 2572.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Ring Nebula'."
+  },
+  {
+    id: "M13",
+    name: "M13 — Ammasso Globulare di Ercole",
+    type: "Ammasso globulare",
+    ra_deg: 250.42300,   // 16h 41m 41s
+    dec_deg: 36.46139,   // +36° 27' 35"
+    distance_ly: 22200.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 13'."
+  },
+  {
+    id: "M51",
+    name: "M51 — Galassia Vortice (Whirlpool Galaxy)",
+    type: "Galassia a spirale",
+    ra_deg: 202.46950,   // 13h 29m 52.7s
+    dec_deg: 47.19528,   // +47° 11' 43"
+    distance_ly: 23000000.0,
+    distance_unc_ly: null,
+    source: "Letteratura astronomica generale."
+  },
+  {
+    id: "M87",
+    name: "M87 — Galassia Virgo A",
+    type: "Galassia ellittica",
+    ra_deg: 187.70583,   // 12h 30m 49.4s
+    dec_deg: 12.39111,   // +12° 23' 28"
+    distance_ly: 53500000.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 87'."
+  },
+  {
+    id: "NGC 7293",
+    name: "NGC 7293 — Nebulosa Elica (Helix Nebula)",
+    type: "Nebulosa planetaria",
+    ra_deg: 337.41083,   // 22h 29m 38.6s
+    dec_deg: -20.83722,  // -20° 50' 14"
+    distance_ly: 655.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Helix Nebula'."
+  },
+  {
+    id: "M44",
+    name: "M44 — Ammasso del Presepio",
+    type: "Ammasso aperto",
+    ra_deg: 130.06667,   // 08h 40m 16s
+    dec_deg: 19.67500,   // +19° 40' 30"
+    distance_ly: 610.0,
+    distance_unc_ly: 20.0,
+    source: "Wikipedia (EN) 'Beehive Cluster'."
+  },
+  {
+    id: "IC 434",
+    name: "IC 434 — Nebulosa Testa di Cavallo",
+    type: "Nebulosa a emissione / oscura",
+    ra_deg: 85.24167,    // 05h 40m 59s
+    dec_deg: -2.45833,   // -02° 27' 30"
+    distance_ly: 1500.0,
+    distance_unc_ly: null,
+    source: "Letteratura di riferimento complesso Orione."
+  },
+  {
+    id: "Sgr A*",
+    name: "Sagittarius A* — Centro Galattico",
+    type: "Buco nero supermassiccio",
+    ra_deg: 266.41683,   // 17h 45m 40.04s
+    dec_deg: -29.00781,  // -29° 00' 28.1"
+    distance_ly: 26670.0,
+    distance_unc_ly: null,
+    source: "Collaborazione GRAVITY / ESO."
+  },
+  {
+    id: "M27",
+    name: "M27 — Nebulosa Manubrio (Dumbbell Nebula)",
+    type: "Nebulosa planetaria",
+    ra_deg: 299.90100,   // 19h 59m 36.34s
+    dec_deg: 22.72111,   // +22° 43' 16"
+    distance_ly: 1360.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Dumbbell Nebula'."
+  },
+  {
+    id: "VEGA",
+    name: "Vega (Alpha Lyrae)",
+    type: "Stella (Principale della Lira)",
+    ra_deg: 279.23473,   // 18h 36m 56.3s
+    dec_deg: 38.78369,   // +38° 47' 01"
+    distance_ly: 25.04,
+    distance_unc_ly: 0.07,
+    source: "Wikipedia (EN) 'Vega' / Catalogo Hipparcos."
+  },
+  {
+    id: "ARCTURUS",
+    name: "Arturo (Alpha Boötis)",
+    type: "Stella (Gigante arancione)",
+    ra_deg: 213.91530,   // 14h 15m 39.7s
+    dec_deg: 19.18222,   // +19° 10' 56"
+    distance_ly: 36.7,
+    distance_unc_ly: 0.2,
+    source: "Wikipedia (EN) 'Arcturus'."
+  },
+  {
+    id: "POLARIS",
+    name: "Stella Polare (Alpha Ursae Minoris)",
+    type: "Stella (Supergigante / Cefeide)",
+    ra_deg: 37.95456,    // 02h 31m 49.1s
+    dec_deg: 89.26411,   // +89° 15' 51"
+    distance_ly: 433.0,
+    distance_unc_ly: 29.0,
+    source: "Wikipedia (EN) 'Polaris'."
+  },
+  {
+    id: "ANTARES",
+    name: "Antares (Alpha Scorpii)",
+    type: "Stella (Supergigante rossa)",
+    ra_deg: 247.35192,   // 16h 29m 24.5s
+    dec_deg: -26.43194,  // -26° 25' 55"
+    distance_ly: 550.0,
+    distance_unc_ly: 90.0,
+    source: "Wikipedia (EN) 'Antares'."
+  },
+  {
+    id: "SIRIUS",
+    name: "Sirio (Alpha Canis Majoris)",
+    type: "Stella (Sistema binario)",
+    ra_deg: 101.28715,   // 06h 45m 08.9s
+    dec_deg: -16.71611,  // -16° 42' 58"
+    distance_ly: 8.60,
+    distance_unc_ly: 0.04,
+    source: "Wikipedia (EN) 'Sirius'."
   }
 ];
 
@@ -120,6 +282,13 @@ container.insertBefore(renderer.domElement, container.firstChild);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, 1, 0.001, 1e9);
+// Il sistema di coordinate sferiche dei controlli orbit (sotto) usa l'asse Z
+// come polo (phi misurato da Z). Il vettore "up" di default di Three.js è
+// invece l'asse Y: senza questa riga, camera.lookAt() userebbe Y come
+// riferimento verticale, disallineato rispetto al polo reale della
+// rotazione — è esattamente questo disallineamento a causare l'effetto di
+// assi di trascinamento apparentemente scambiati.
+camera.up.set(0, 0, 1);
 
 /* =============================================================================
    SFONDO GALATTICO — STRUTTURA A BRACCI DI SPIRALE (schematica)
@@ -474,6 +643,47 @@ const galacticGrid = new THREE.Group();
 scene.add(galacticGrid);
 
 /* =============================================================================
+   ETICHETTE DI COORDINATE SULLA GRIGLIA
+   Longitudine 0°/90°/180°/270° sull'equatore galattico, più i due poli
+   (b=+90°/-90°) e un'etichetta esplicita per l'equatore (b=0°) in un punto
+   che non si sovrapponga alle etichette di longitudine.
+   Le posizioni sono salvate come direzioni unitarie e moltiplicate per il
+   raggio corrente di galacticGrid ad ogni frame — così restano ancorate alla
+   griglia anche quando il suo raggio cambia (cambio di oggetto selezionato).
+   ============================================================================= */
+const GRID_LABEL_DEFS = [
+  { l: 0,   b: 0,  text: 'l=0°'   },
+  { l: 90,  b: 0,  text: 'l=90°'  },
+  { l: 180, b: 0,  text: 'l=180°' },
+  { l: 270, b: 0,  text: 'l=270°' },
+  { l: 45,  b: 0,  text: 'b=0°'   },
+  { l: 0,   b: 90, text: 'b=+90°' },
+  { l: 0,   b: -90, text: 'b=−90°' }
+];
+const gridLabelEls = GRID_LABEL_DEFS.map(def => {
+  const el = document.createElement('div');
+  el.className = 'gridLabel';
+  el.textContent = def.text;
+  document.getElementById('armLabels').appendChild(el);
+  return { el, unitDir: galacticGridPoint(def.l, def.b) };
+});
+
+function updateGridLabels() {
+  const w = container.clientWidth, h = container.clientHeight;
+  const radius = galacticGrid.scale.x;
+  gridLabelEls.forEach(({ el, unitDir }) => {
+    const position = unitDir.clone().multiplyScalar(radius);
+    const viewSpace = position.clone().applyMatrix4(camera.matrixWorldInverse);
+    if (viewSpace.z > 0) { el.style.display = 'none'; return; }
+    const ndc = position.clone().project(camera);
+    if (ndc.x < -1.2 || ndc.x > 1.2 || ndc.y < -1.2 || ndc.y > 1.2) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = ((ndc.x + 1) / 2 * w) + 'px';
+    el.style.top = ((1 - ndc.y) / 2 * h) + 'px';
+  });
+}
+
+/* =============================================================================
    CONTROLLI ORBIT MANUALI (drag per ruotare, rotella per zoom)
    Implementati senza dipendere da THREE.OrbitControls, che non è incluso nel
    build core three.min.js e richiederebbe un addon separato non garantito
@@ -645,6 +855,7 @@ onResize();
 function animate() {
   requestAnimationFrame(animate);
   updateArmLabels();
+  updateGridLabels();
   renderer.render(scene, camera);
 }
 animate();
