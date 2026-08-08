@@ -50,7 +50,13 @@
   <div id="info"></div>
 </div>
 
-
+<!-- Correzione rispetto alla versione precedente: cdnjs non pubblica più una
+     build UMD/globale (three.min.js) per le versioni recenti di three.js — solo
+     build ES module. Verificato tramite ricerca sulla pagina cdnjs.com/libraries/
+     three.js: la versione pubblicata al momento della verifica è 0.185.1, con
+     asset "three.module.min.js" tra quelli disponibili. Se in futuro la versione
+     cambia e questo URL smette di funzionare, controlla la lista aggiornata su
+     https://cdnjs.com/libraries/three.js e sostituisci il numero di versione. -->
 <script type="module">
 import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js";
 
@@ -395,20 +401,77 @@ function updateArmLabels() {
 }
 
 // Marcatore Terra (dimensione arbitraria, non in scala — vedi nota in UI)
+// Colore azzurro intenso, distinguibile a colpo d'occhio dall'oggetto target
 const earthGeo = new THREE.SphereGeometry(1, 24, 24);
-const earthMat = new THREE.MeshBasicMaterial({ color: 0x4a90ff });
+const earthMat = new THREE.MeshBasicMaterial({ color: 0x1ec8ff });
 const earthMesh = new THREE.Mesh(earthGeo, earthMat);
 scene.add(earthMesh);
 
-// Marcatore oggetto target
+// Marcatore oggetto target — rosso intenso
 const targetGeo = new THREE.SphereGeometry(1, 24, 24);
-const targetMat = new THREE.MeshBasicMaterial({ color: 0xffb04a });
+const targetMat = new THREE.MeshBasicMaterial({ color: 0xff2b2b });
 const targetMesh = new THREE.Mesh(targetGeo, targetMat);
 scene.add(targetMesh);
+
+/* Punti "ancora" a dimensione fissa in pixel (sizeAttenuation:false):
+   garantiscono che Terra e oggetto restino visibili anche quando, con lo
+   zoom indietro, la mesh 3D scenderebbe sotto la dimensione di un pixel.
+   depthTest:false + renderOrder alto: restano sempre in primo piano, mai
+   nascosti da altri elementi della scena. */
+const earthDotMat = new THREE.PointsMaterial({ color: 0x1ec8ff, size: 7, sizeAttenuation: false, depthTest: false });
+const earthDotGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0)]);
+const earthDot = new THREE.Points(earthDotGeo, earthDotMat);
+earthDot.renderOrder = 999;
+scene.add(earthDot);
+
+const targetDotMat = new THREE.PointsMaterial({ color: 0xff2b2b, size: 7, sizeAttenuation: false, depthTest: false });
+const targetDotGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0)]);
+const targetDot = new THREE.Points(targetDotGeo, targetDotMat);
+targetDot.renderOrder = 999;
+scene.add(targetDot);
 
 // Linea Terra-oggetto
 const lineMat = new THREE.LineBasicMaterial({ color: 0x556077 });
 let lineObj = null;
+
+/* =============================================================================
+   GRIGLIA DI COORDINATE GALATTICHE (centrata sulla Terra)
+   Meridiani (longitudine costante, ogni 30°) e paralleli (latitudine
+   costante, ogni 30°), più l'equatore galattico (b=0°) evidenziato — è la
+   convenzione standard per una griglia di coordinate galattiche.
+   Costruita come direzioni unitarie (Terra all'origine), poi scalata
+   dinamicamente in base alla vista corrente (vedi loadObject) invece di
+   avere un raggio fisso, per restare utile sia per oggetti vicini (M42) sia
+   per oggetti lontanissimi (M31).
+   ============================================================================= */
+function galacticGridPoint(lDeg, bDeg) {
+  const l = THREE.MathUtils.degToRad(lDeg);
+  const b = THREE.MathUtils.degToRad(bDeg);
+  const eq = galacticToEquatorial(l, b);
+  return raDecDistToCartesian(eq.ra, eq.dec, 1);
+}
+
+const galacticGrid = new THREE.Group();
+(function buildGalacticGrid() {
+  const gridMat = new THREE.LineBasicMaterial({ color: 0x3a4a66, transparent: true, opacity: 0.3 });
+  const equatorMat = new THREE.LineBasicMaterial({ color: 0x6f8fc4, transparent: true, opacity: 0.55 });
+
+  // meridiani: longitudine galattica costante, ogni 30°, da b=-90° a b=+90°
+  for (let lDeg = 0; lDeg < 360; lDeg += 30) {
+    const pts = [];
+    for (let bDeg = -90; bDeg <= 90; bDeg += 5) pts.push(galacticGridPoint(lDeg, bDeg));
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    galacticGrid.add(new THREE.Line(geo, gridMat));
+  }
+  // paralleli: latitudine galattica costante, ogni 30° (poli esclusi, sono punti)
+  for (let bDeg = -60; bDeg <= 60; bDeg += 30) {
+    const pts = [];
+    for (let lDeg = 0; lDeg <= 360; lDeg += 5) pts.push(galacticGridPoint(lDeg, bDeg));
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    galacticGrid.add(new THREE.LineLoop(geo, bDeg === 0 ? equatorMat : gridMat));
+  }
+})();
+scene.add(galacticGrid);
 
 /* =============================================================================
    CONTROLLI ORBIT MANUALI (drag per ruotare, rotella per zoom)
@@ -481,6 +544,8 @@ renderer.domElement.addEventListener('wheel', (e) => {
 function loadObject(entry) {
   const pos = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
   targetMesh.position.copy(pos);
+  targetDot.geometry.setFromPoints([pos]);
+  // earthDot resta sempre all'origine, nessun aggiornamento necessario
 
   // dimensione marcatori scalata sulla distanza, SOLO per visibilità — non è
   // la dimensione fisica reale dell'oggetto né della Terra
@@ -525,6 +590,11 @@ function loadObject(entry) {
   camera.far = fitDistance * 500;
   camera.updateProjectionMatrix();
   controls.update();
+
+  // griglia galattica: raggio proporzionato alla vista corrente, abbastanza
+  // dietro la posizione iniziale della camera da fare da sfondo senza
+  // tagliare oggetto/Terra
+  galacticGrid.scale.setScalar(fitDistance * 3);
 
   updateInfoPanel(entry);
 }
