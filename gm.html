@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Posizione relativa Terra-oggetto</title>
+<style>
+  :root {
+    --bg: #05070d;
+    --panel-bg: rgba(10, 14, 24, 0.88);
+    --border: #2a3348;
+    --text: #e6e9f0;
+    --muted: #8b93a7;
+    --accent: #6fa8ff;
+    --warn: #e0b04a;
+  }
+  html, body { margin:0; padding:0; height:100%; background: var(--bg); overflow:hidden;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #container { position:relative; width:100%; height:100vh; }
+  canvas { display:block; touch-action:none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #topbar { position:absolute; top:12px; left:12px; right:12px;
+    display:flex; gap:8px; align-items:center; z-index:10; }
+  select { background: var(--panel-bg); color: var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:8px 10px; font-size:14px; max-width:340px; }
+  #hint { position:absolute; top:14px; right:14px; color: var(--muted); font-size:12px; z-index:10; }
+  #info { position:absolute; bottom:12px; left:12px; right:12px; max-width:480px;
+    background: var(--panel-bg); border:1px solid var(--border); border-radius:8px;
+    padding:12px 14px; color: var(--text); font-size:13px; line-height:1.5; z-index:10; }
+  #info h3 { margin:0 0 6px 0; font-size:16px; color: var(--accent); }
+  #info .row { color: var(--muted); margin:2px 0; }
+  #info .warn { color: var(--warn); margin-top:8px; font-size:11.5px; }
+  #info .src { color: var(--muted); margin-top:6px; font-size:11px; font-style:italic; }
+  #distlabel { position:absolute; pointer-events:none; color: var(--accent); font-size:12px;
+    background: rgba(5,7,13,0.7); padding:2px 6px; border-radius:4px; z-index:9; white-space:nowrap; }
+  #armLabels { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:8; }
+  .armLabel { position:absolute; transform: translate(-50%, -50%); color:#9fb3d9; font-size:11px;
+    letter-spacing:0.04em; text-shadow: 0 0 4px rgba(5,7,13,0.9), 0 0 2px rgba(5,7,13,0.9);
+    white-space:nowrap; }
+</style>
+</head>
+<body>
+<div id="container">
+  <div id="topbar">
+    <select id="objectSelect"></select>
+  </div>
+  <div id="hint">trascina per ruotare · rotella per zoom</div>
+  <div id="distlabel" style="display:none;"></div>
+  <div id="armLabels"></div>
+  <div id="info"></div>
+</div>
+
+
+<script type="module">
+import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js";
+
+/* =============================================================================
+   CATALOGO OGGETTI
+   Ogni voce: id, name, type, ra_deg, dec_deg (equatoriali J2000, in gradi
+   decimali), distance_ly, distance_unc_ly (null se non nota/non riportata),
+   source (citazione testuale della fonte).
+
+   IMPORTANTE: aggiungere nuove voci solo con dati verificati (SIMBAD, VizieR,
+   Wikipedia con infobox, letteratura primaria). Non inventare coordinate o
+   distanze per riempire il catalogo — un valore sbagliato qui produce una
+   posizione 3D sbagliata, silenziosamente.
+   ============================================================================= */
+const CATALOG = [
+  {
+    id: "M42",
+    name: "M42 — Nebulosa di Orione",
+    type: "Nebulosa a emissione/riflessione",
+    ra_deg: 83.82000,    // 05h 35m 16.8s
+    dec_deg: -5.38750,   // -05° 23' 15"
+    distance_ly: 1267.0,
+    distance_unc_ly: 5.4,
+    source: "Wikipedia (EN) 'Orion Nebula', infobox. Nota: altre fonti (SEDS, ESA, letteratura più datata) riportano valori tra 1300 e 1500 al — la distanza non è univoca in letteratura."
+  },
+  {
+    id: "M31",
+    name: "M31 — Galassia di Andromeda",
+    type: "Galassia a spirale",
+    ra_deg: 10.68471,    // 00h 42m 44.33s
+    dec_deg: 41.26875,   // +41° 16' 07.5"
+    distance_ly: 2500000,
+    distance_unc_ly: null,
+    source: "Universe Guide (fonte secondaria, non incrociata con SIMBAD/VizieR in questa sessione). Valore ~2,5 milioni al è quello comunemente citato, ma va riverificato su un catalogo primario prima di un uso rigoroso."
+  }
+];
+
+/* =============================================================================
+   CONVERSIONE COORDINATE
+   Equatoriali (RA, Dec, distanza) -> Cartesiane, origine = Terra/Sole,
+   asse X verso (RA=0, Dec=0), asse Z verso il polo nord celeste.
+   Formula standard, non è un dato da verificare (è definizione geometrica).
+   ============================================================================= */
+function raDecDistToCartesian(raDeg, decDeg, distance) {
+  const ra = THREE.MathUtils.degToRad(raDeg);
+  const dec = THREE.MathUtils.degToRad(decDeg);
+  return new THREE.Vector3(
+    distance * Math.cos(dec) * Math.cos(ra),
+    distance * Math.cos(dec) * Math.sin(ra),
+    distance * Math.sin(dec)
+  );
+}
+
+/* =============================================================================
+   SETUP SCENA
+   ============================================================================= */
+const container = document.getElementById('container');
+const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.insertBefore(renderer.domElement, container.firstChild);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, 1, 0.001, 1e9);
+
+/* =============================================================================
+   SFONDO GALATTICO — STRUTTURA A BRACCI DI SPIRALE (schematica)
+
+   Questo NON è un catalogo di stelle reali con posizioni individuali verificate:
+   è una distribuzione procedurale che segue la forma generale nota della Via
+   Lattea, così che lo sfondo sia un disco a spirale e non una sfera uniforme.
+
+   Parametri e cosa è verificato / cosa è scelta illustrativa:
+
+   - Numero di bracci: 4. La maggioranza delle pubblicazioni favorisce un
+     modello a 4 bracci maggiori (Scutum-Centaurus, Sagittario, Perseo, Norma),
+     ma circa un sesto degli studi propende per un modello a 2 bracci — la
+     struttura esatta è tuttora oggetto di dibattito in letteratura
+     (Vallée 2014b/2017; Hou & Han 2014, arXiv:1810.08819).
+   - Angolo di pitch: 12°, valore medio citato in più studi (Vallée), con
+     variazioni da studio a studio.
+   - Distanza Sole-Centro Galattico: 8,0 kpc (~26.100 al). Valore comunemente
+     usato in letteratura; il range osservato è circa 7,5-8,5 kpc a seconda
+     dello studio.
+   - Posizione del Sole: in una regione interbraccio (il cosiddetto Braccio
+     Locale/di Orione), tra il Braccio di Perseo e quello del Sagittario —
+     dato riportato in più fonti (es. arXiv:1409.4801, arXiv:1810.12995).
+   - Raggio interno/esterno dei bracci (3-13 kpc) e spessore verticale del
+     disco: scelte illustrative per ottenere un aspetto visivamente plausibile,
+     NON misure verificate puntualmente in questa sessione.
+   - Verso di avvolgimento della spirale (chirale, orario/antiorario visto dal
+     polo nord galattico): scelta di implementazione non verificata contro le
+     mappe osservative pubblicate — la forma generale (spirale, 4 bracci,
+     pitch ~12°, Sole in regione interbraccio) è rappresentativa, il verso
+     esatto potrebbe non corrispondere a quello reale.
+
+   La trasformazione da coordinate galattiche a equatoriali usa le costanti
+   IAU standard (Hipparcos Explanatory Supplement), verificate in questa
+   sessione: RA polo galattico nord = 192.85948°, Dec = 27.12825°,
+   longitudine galattica del polo celeste nord = 122.93192°.
+   ============================================================================= */
+const ALPHA_G = THREE.MathUtils.degToRad(192.85948);
+const DELTA_G = THREE.MathUtils.degToRad(27.12825);
+const L_NCP   = THREE.MathUtils.degToRad(122.93192);
+
+function galacticToEquatorial(lRad, bRad) {
+  const sinDec = Math.sin(DELTA_G) * Math.sin(bRad) + Math.cos(DELTA_G) * Math.cos(bRad) * Math.cos(L_NCP - lRad);
+  const dec = Math.asin(Math.max(-1, Math.min(1, sinDec)));
+  const y = Math.cos(bRad) * Math.sin(L_NCP - lRad);
+  const x = Math.sin(bRad) * Math.cos(DELTA_G) - Math.cos(bRad) * Math.sin(DELTA_G) * Math.cos(L_NCP - lRad);
+  const ra = ALPHA_G + Math.atan2(y, x);
+  return { ra: THREE.MathUtils.radToDeg(ra), dec: THREE.MathUtils.radToDeg(dec) };
+}
+
+/* Nomi dei bracci, assegnati ai 4 bracci generati in ordine sequenziale a 90°
+   l'uno dall'altro. Questo ordine (Norma -> Scutum-Centaurus -> Sagittario ->
+   Perseo, ciascuno offset di 90°) non è arbitrario: riproduce la "condizione
+   di similarità" usata in un modello pubblicato a 4 bracci simmetrici
+   (Vallée 2017, "A guided map to the spiral arms in the galactic disk of the
+   Milky Way", Astron. Rev. — the model explicitly offsets each arm by 90° in
+   sequenza rispetto al Braccio di Norma).
+   ATTENZIONE — cosa NON è verificato: la calibrazione assoluta di quale
+   direzione del cielo corrisponda a "Norma" qui è approssimata (allineata
+   grossolanamente alla tangente nota del Braccio di Norma, longitudine
+   galattica ≈ -33°/327°, da Vallée 2017 e Melnik & Rautiainen 2011), ma dato
+   che nella realtà i quattro bracci NON sono equidistanti in longitudine
+   osservata (le tangenti reali sono a circa 49° Sagittario, 31° Scutum,
+   -22,5° Perseo, -33° Norma — non spaziate di 90°), gli altri tre bracci di
+   questo modello semplificato non cadranno esattamente sulle rispettive
+   tangenti reali. L'ordine e il nome sono quindi corretti concettualmente,
+   la direzione precisa nel cielo è approssimata.
+
+   Calibrazione EFFETTIVAMENTE calcolata (non solo dichiarata a parole): ho
+   risolto numericamente l'offset che porta il punto del Braccio di Norma a
+   longitudine galattica ≈ -33° (nel punto in cui r=8 kpc, come proxy
+   grossolano del punto di tangenza). Con questo unico punto calibrato, gli
+   altri tre bracci del modello a spaziatura fissa di 90° cadono a:
+   Scutum-Centaurus ≈ +12° (reale ≈ +31°, scarto ~19°), Sagittario ≈ +57°
+   (reale ≈ +49°, scarto ~8°), Perseo ≈ -78° (reale ≈ -22,5°, scarto ~55°).
+   Lo scarto su Perseo è quindi rilevante: la sua etichetta nel widget NON è
+   vicina alla direzione reale del Braccio di Perseo nel cielo — limite
+   intrinseco del modello a 4 bracci equidistanti, te lo segnalo esplicitamente
+   perché è l'unico punto dove lo scarto è abbastanza ampio da poter fuorviare
+   se letto come dato invece che come schema. */
+const ARM_NAMES = ["Norma", "Scutum-Centaurus", "Sagittario", "Perseo"];
+const NORMA_CALIBRATION_OFFSET_DEG = 29.61; // calcolato per scansione numerica
+  // (vedi nota sopra), non un valore scelto a occhio
+
+function galacticPointToScenePosition(Xg, Yg, Zg) {
+  const dist = Math.sqrt(Xg*Xg + Yg*Yg + Zg*Zg);
+  const b = Math.asin(Zg / dist);
+  const l = Math.atan2(Yg, Xg);
+  const eq = galacticToEquatorial(l, b);
+  return { pos: raDecDistToCartesian(eq.ra, eq.dec, dist), distance: dist };
+}
+
+function generateSpiralBackground() {
+  const LY_PER_KPC = 3261.56;
+  const R_SUN_LY = 8.0 * LY_PER_KPC;
+  const numArms = 4;
+  const pitch = THREE.MathUtils.degToRad(12);
+  const pointsPerArm = 900;
+  const rStartKpc = 3, rEndKpc = 13;
+  const thetaSpan = Math.log(rEndKpc / rStartKpc) / Math.tan(pitch);
+  const baseOffset = THREE.MathUtils.degToRad(NORMA_CALIBRATION_OFFSET_DEG);
+
+  const positions = [];
+  const arms = [];
+  for (let arm = 0; arm < numArms; arm++) {
+    const armOffset = baseOffset + (arm / numArms) * Math.PI * 2;
+    let midPoint = null;
+    for (let i = 0; i < pointsPerArm; i++) {
+      const t = i / pointsPerArm;
+      const theta = t * thetaSpan;
+      const rKpc = rStartKpc * Math.exp(theta * Math.tan(pitch));
+
+      // scatter per dare "spessore" visivo al braccio — non è un dato osservativo
+      const angleScatter = (Math.random() - 0.5) * 0.25;
+      const radiusScatter = 1 + (Math.random() - 0.5) * 0.15;
+      const phi = theta + armOffset + angleScatter;
+      const r = rKpc * radiusScatter * LY_PER_KPC;
+
+      const Xc = r * Math.cos(phi);
+      const Yc = r * Math.sin(phi);
+      const scaleHeight = r * 0.02; // spessore del disco, scelta illustrativa
+      const Zc = (Math.random() - 0.5) * scaleHeight * 2;
+
+      // da centro-galattiche a eliocentriche (Terra/Sole all'origine)
+      const { pos } = galacticPointToScenePosition(Xc + R_SUN_LY, Yc, Zc);
+      positions.push(pos.x, pos.y, pos.z);
+
+      // punto di ancoraggio per l'etichetta: centro geometrico del braccio
+      // (senza scatter), a metà del suo sviluppo
+      if (i === Math.floor(pointsPerArm * 0.5)) {
+        const rMidKpc = rStartKpc * Math.exp(theta * Math.tan(pitch));
+        const phiMid = theta + armOffset;
+        const rMid = rMidKpc * LY_PER_KPC;
+        const { pos: midPos } = galacticPointToScenePosition(
+          rMid * Math.cos(phiMid) + R_SUN_LY, rMid * Math.sin(phiMid), 0);
+        midPoint = midPos;
+      }
+    }
+    arms.push({ name: ARM_NAMES[arm], position: midPoint });
+  }
+  return { positions: new Float32Array(positions), arms, R_SUN_LY };
+}
+
+const galaxyStructure = generateSpiralBackground();
+
+(function addSpiralBackground() {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(galaxyStructure.positions, 3));
+  const mat = new THREE.PointsMaterial({ color: 0x5b7fb5, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.75 });
+  const points = new THREE.Points(geo, mat);
+  points.renderOrder = -1;
+  scene.add(points);
+})();
+
+/* =============================================================================
+   BARRA CENTRALE (spirale barrata)
+
+   La Via Lattea è considerata una spirale barrata: un struttura allungata di
+   stelle al centro, non un bulge sferico. La implemento qui, non più come
+   blob piatto ma come ellissoide allungato, orientato secondo l'angolo di
+   inclinazione della barra rispetto alla linea Sole-Centro Galattico.
+
+   Dati verificati in questa sessione (più fonti indipendenti concordano):
+   - Angolo della barra rispetto alla linea Sole-Centro: ~20-30°, con stime
+     più recenti e precise intorno a 27° (Wegg & Gerhard 2013: 27°±2°;
+     un articolo del 2026 in ADS conferma 27,4°±1,5° per la componente "long
+     bar"). Uso 27°.
+   - Verso: l'estremo vicino della barra punta verso longitudini galattiche
+     POSITIVE (riportato in più fonti: Gonzalez & Gadotti; Li et al. 2022,
+     IOPscience). Ho verificato numericamente (script separato) quale segno
+     di rotazione nel mio sistema di coordinate riproduce questo verso,
+     prima di usarlo — non l'ho assunto.
+   - Semiasse maggiore: ~5 kpc (Wegg et al. 2015 per la "long bar": semi-major
+     ~5 kpc; altre stime per la barra "corta" danno 3,1-4,5 kpc — la barra
+     reale ha probabilmente due componenti sovrapposte, qui ne uso una sola
+     come semplificazione).
+   - Rapporto tra gli assi: 1 : 0,4 : 0,3 (semiasse lungo : semiasse corto nel
+     piano : semiasse verticale) — Gonzalez & Gadotti review.
+
+   Cosa NON è verificato: la barra reale ha probabilmente una forma "a
+   arachide/scatola" (peanut/box-shaped) vista di taglio, non un ellissoide
+   liscio — qui uso un ellissoide come approssimazione grossolana della forma,
+   non della sola orientazione/dimensione (quelle sono citate sopra).
+   ============================================================================= */
+function galacticDirToSceneDir(Xg, Yg, Zg) {
+  const l = Math.atan2(Yg, Xg);
+  const b = Math.asin(Zg / Math.sqrt(Xg*Xg + Yg*Yg + Zg*Zg));
+  const eq = galacticToEquatorial(l, b);
+  return raDecDistToCartesian(eq.ra, eq.dec, 1);
+}
+
+(function addBar() {
+  const LY_PER_KPC = 3261.56;
+  const barAngle = THREE.MathUtils.degToRad(27);
+
+  const gc = galacticToEquatorial(0, 0);
+  const gcPos = raDecDistToCartesian(gc.ra, gc.dec, galaxyStructure.R_SUN_LY);
+  const ngpDir = raDecDistToCartesian(192.85948, 27.12825, 1).normalize();
+
+  // direzione dell'asse lungo della barra nel sistema galattico eliocentrico
+  // (Xg,Yg,Zg): verificata numericamente per dare l'estremo vicino verso
+  // longitudine positiva, vedi commento sopra
+  const barLongDirGalactic = [Math.cos(barAngle), -Math.sin(barAngle), 0];
+  const barLongDirScene = galacticDirToSceneDir(...barLongDirGalactic).normalize();
+  const barShortDirScene = new THREE.Vector3().crossVectors(ngpDir, barLongDirScene).normalize();
+
+  const basis = new THREE.Matrix4().makeBasis(barLongDirScene, barShortDirScene, ngpDir);
+  const barQuaternion = new THREE.Quaternion().setFromRotationMatrix(basis);
+
+  const semiLong = 5.0 * LY_PER_KPC;
+  const semiInPlane = semiLong * 0.4;
+  const semiVertical = semiLong * 0.3;
+
+  const geo = new THREE.SphereGeometry(1, 32, 24);
+
+  const barMat = new THREE.MeshBasicMaterial({ color: 0xffcf8a, transparent: true, opacity: 0.28 });
+  const bar = new THREE.Mesh(geo, barMat);
+  bar.scale.set(semiLong, semiInPlane, semiVertical);
+  bar.quaternion.copy(barQuaternion);
+  bar.position.copy(gcPos);
+  scene.add(bar);
+
+  const nucleusMat = new THREE.MeshBasicMaterial({ color: 0xffe6b3, transparent: true, opacity: 0.55 });
+  const nucleus = new THREE.Mesh(geo, nucleusMat);
+  const nucleusSize = semiLong * 0.12;
+  nucleus.scale.setScalar(nucleusSize);
+  nucleus.position.copy(gcPos);
+  scene.add(nucleus);
+
+  // nube di punti entro il volume della barra, per un aspetto granulare
+  // invece di un blob liscio — densità maggiore verso il centro
+  const count = 1600;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    // campionamento in un ellissoide unitario, con bias verso il centro
+    let u, v, w, r2;
+    do {
+      u = (Math.random() * 2 - 1);
+      v = (Math.random() * 2 - 1);
+      w = (Math.random() * 2 - 1);
+      r2 = u*u + v*v + w*w;
+    } while (r2 > 1);
+    const bias = Math.pow(Math.random(), 0.6); // 0..1, concentra punti verso il centro
+    const local = new THREE.Vector3(u, v, w).normalize().multiplyScalar(bias);
+    local.set(local.x * semiLong, local.y * semiInPlane, local.z * semiVertical);
+    local.applyQuaternion(barQuaternion).add(gcPos);
+    positions[i*3] = local.x; positions[i*3+1] = local.y; positions[i*3+2] = local.z;
+  }
+  const pgeo = new THREE.BufferGeometry();
+  pgeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const pmat = new THREE.PointsMaterial({ color: 0xffdca8, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0.8 });
+  scene.add(new THREE.Points(pgeo, pmat));
+})();
+
+/* =============================================================================
+   ETICHETTE DEI BRACCI (overlay DOM, proiezione manuale — non uso
+   CSS2DRenderer perché è un addon non incluso nel build core caricato da CDN)
+   ============================================================================= */
+const armLabelEls = galaxyStructure.arms.map(arm => {
+  const el = document.createElement('div');
+  el.className = 'armLabel';
+  el.textContent = arm.name;
+  document.getElementById('armLabels').appendChild(el);
+  return { el, position: arm.position };
+});
+
+function updateArmLabels() {
+  camera.updateMatrixWorld();
+  const w = container.clientWidth, h = container.clientHeight;
+  armLabelEls.forEach(({ el, position }) => {
+    const viewSpace = position.clone().applyMatrix4(camera.matrixWorldInverse);
+    if (viewSpace.z > 0) { el.style.display = 'none'; return; } // dietro la camera
+    const ndc = position.clone().project(camera);
+    if (ndc.x < -1.2 || ndc.x > 1.2 || ndc.y < -1.2 || ndc.y > 1.2) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = ((ndc.x + 1) / 2 * w) + 'px';
+    el.style.top = ((1 - ndc.y) / 2 * h) + 'px';
+  });
+}
+
+// Marcatore Terra (dimensione arbitraria, non in scala — vedi nota in UI)
+const earthGeo = new THREE.SphereGeometry(1, 24, 24);
+const earthMat = new THREE.MeshBasicMaterial({ color: 0x4a90ff });
+const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+scene.add(earthMesh);
+
+// Marcatore oggetto target
+const targetGeo = new THREE.SphereGeometry(1, 24, 24);
+const targetMat = new THREE.MeshBasicMaterial({ color: 0xffb04a });
+const targetMesh = new THREE.Mesh(targetGeo, targetMat);
+scene.add(targetMesh);
+
+// Linea Terra-oggetto
+const lineMat = new THREE.LineBasicMaterial({ color: 0x556077 });
+let lineObj = null;
+
+/* =============================================================================
+   CONTROLLI ORBIT MANUALI (drag per ruotare, rotella per zoom)
+   Implementati senza dipendere da THREE.OrbitControls, che non è incluso nel
+   build core three.min.js e richiederebbe un addon separato non garantito
+   sulla stessa CDN.
+   ============================================================================= */
+const controls = {
+  target: new THREE.Vector3(0, 0, 0),
+  radius: 10,
+  minRadius: 0.1,
+  maxRadius: 1e8,
+  theta: Math.PI / 4,   // angolo azimutale
+  phi: Math.PI / 3,     // angolo polare
+  dragging: false,
+  lastX: 0, lastY: 0,
+
+  update() {
+    const sinPhi = Math.sin(this.phi);
+    camera.position.set(
+      this.target.x + this.radius * sinPhi * Math.cos(this.theta),
+      this.target.y + this.radius * sinPhi * Math.sin(this.theta),
+      this.target.z + this.radius * Math.cos(this.phi)
+    );
+    camera.lookAt(this.target);
+  }
+};
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  controls.dragging = true;
+  controls.lastX = e.clientX;
+  controls.lastY = e.clientY;
+});
+window.addEventListener('pointerup', () => controls.dragging = false);
+window.addEventListener('pointermove', (e) => {
+  if (!controls.dragging) return;
+  const dx = e.clientX - controls.lastX;
+  const dy = e.clientY - controls.lastY;
+  controls.lastX = e.clientX;
+  controls.lastY = e.clientY;
+  controls.theta -= dx * 0.005;
+  controls.phi -= dy * 0.005;
+  controls.phi = Math.max(0.05, Math.min(Math.PI - 0.05, controls.phi));
+  controls.update();
+});
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = Math.pow(1.1, e.deltaY > 0 ? 1 : -1);
+  controls.radius = Math.max(controls.minRadius, Math.min(controls.maxRadius, controls.radius * factor));
+  controls.update();
+}, { passive: false });
+
+/* =============================================================================
+   INQUADRATURA AUTOMATICA PER OGGETTO SELEZIONATO
+
+   Il perno di rotazione (controls.target) è sempre la Terra, non il punto
+   medio del segmento Terra-oggetto: ruotando, la Terra resta sempre al centro
+   dello schermo. Di conseguenza l'oggetto NON è garantito visibile per
+   qualunque angolo di rotazione (lo sarebbe stato solo ancorando al punto
+   medio) — è una scelta esplicita, coerente con la richiesta di ancorare
+   sulla Terra.
+
+   Per la vista iniziale, la posizione della camera è scelta in modo che la
+   direzione Terra-camera sia ESATTAMENTE perpendicolare alla direzione
+   Terra-oggetto: in questa configurazione lo scostamento angolare
+   dell'oggetto dal centro schermo è esattamente atan(distanza/raggioCamera)
+   (relazione geometrica esatta, non un'approssimazione), il che permette di
+   scegliere il raggio della camera per ottenere una composizione prevedibile.
+   ============================================================================= */
+function loadObject(entry) {
+  const pos = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
+  targetMesh.position.copy(pos);
+
+  // dimensione marcatori scalata sulla distanza, SOLO per visibilità — non è
+  // la dimensione fisica reale dell'oggetto né della Terra
+  const markerScale = entry.distance_ly * 0.01;
+  earthMesh.scale.setScalar(Math.max(markerScale, 0.001));
+  targetMesh.scale.setScalar(Math.max(markerScale, 0.001));
+
+  if (lineObj) scene.remove(lineObj);
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), pos]);
+  lineObj = new THREE.Line(lineGeo, lineMat);
+  scene.add(lineObj);
+
+  const fovRad = THREE.MathUtils.degToRad(camera.fov);
+  const objDir = pos.clone().normalize();
+
+  // due direzioni perpendicolari a objDir, per posizionare la camera con un
+  // po' di elevazione mantenendo l'esatta perpendicolarità (qualunque
+  // combinazione lineare di due vettori perpendicolari a objDir resta
+  // perpendicolare a objDir)
+  let refUp = new THREE.Vector3(0, 0, 1);
+  if (Math.abs(objDir.dot(refUp)) > 0.98) refUp = new THREE.Vector3(0, 1, 0);
+  const side = new THREE.Vector3().crossVectors(objDir, refUp).normalize();
+  const vert = new THREE.Vector3().crossVectors(objDir, side).normalize();
+  const tiltRad = THREE.MathUtils.degToRad(25);
+  const perpDir = new THREE.Vector3()
+    .addScaledVector(side, Math.cos(tiltRad))
+    .addScaledVector(vert, Math.sin(tiltRad))
+    .normalize();
+
+  // raggio camera: vogliamo che l'oggetto compaia a circa metà dell'angolo
+  // di campo dal centro (composizione con margine, non al bordo)
+  const targetOffsetRad = 0.5 * (fovRad / 2);
+  const fitDistance = entry.distance_ly / Math.tan(targetOffsetRad);
+
+  controls.target.set(0, 0, 0);
+  controls.radius = fitDistance;
+  controls.minRadius = fitDistance * 0.1;
+  controls.maxRadius = fitDistance * 80;
+  controls.theta = Math.atan2(perpDir.y, perpDir.x);
+  controls.phi = Math.acos(perpDir.z);
+  camera.near = fitDistance * 0.0005;
+  camera.far = fitDistance * 500;
+  camera.updateProjectionMatrix();
+  controls.update();
+
+  updateInfoPanel(entry);
+}
+
+
+function updateInfoPanel(entry) {
+  const info = document.getElementById('info');
+  const uncStr = entry.distance_unc_ly
+    ? ` ± ${entry.distance_unc_ly.toLocaleString('it-IT')}`
+    : '';
+  const distStr = entry.distance_ly >= 1e6
+    ? (entry.distance_ly / 1e6).toLocaleString('it-IT', {maximumFractionDigits: 2}) + ' milioni di anni luce'
+    : entry.distance_ly.toLocaleString('it-IT') + uncStr + ' anni luce';
+  info.innerHTML = `
+    <h3>${entry.name}</h3>
+    <div class="row">${entry.type}</div>
+    <div class="row">Distanza dalla Terra: ${distStr}</div>
+    <div class="row">RA: ${entry.ra_deg.toFixed(4)}°  Dec: ${entry.dec_deg.toFixed(4)}° (J2000)</div>
+    <div class="warn">I marcatori 3D non sono in scala rispetto alla distanza reale (altrimenti sarebbero invisibili); indicano solo la posizione relativa.</div>
+    <div class="src">Fonte: ${entry.source}</div>
+  `;
+}
+
+/* =============================================================================
+   UI: selettore catalogo
+   ============================================================================= */
+const select = document.getElementById('objectSelect');
+CATALOG.forEach((entry, i) => {
+  const opt = document.createElement('option');
+  opt.value = i;
+  opt.textContent = entry.name;
+  select.appendChild(opt);
+});
+select.addEventListener('change', () => loadObject(CATALOG[select.value]));
+
+/* =============================================================================
+   RESIZE + RENDER LOOP
+   ============================================================================= */
+function onResize() {
+  const w = container.clientWidth, h = container.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+function animate() {
+  requestAnimationFrame(animate);
+  updateArmLabels();
+  renderer.render(scene, camera);
+}
+animate();
+
+// avvio con il primo oggetto del catalogo
+loadObject(CATALOG[0]);
+</script>
+</body>
+</html>
