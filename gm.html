@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Milky Way Simulator</title>
+<title>Posizione relativa Terra-oggetto</title>
 <style>
   :root {
     --bg: #05070d;
@@ -83,7 +83,7 @@ import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/
 const CATALOG = [
   {
     id: "M42",
-    name: "M42 — Nebulosa di Orione",
+    name: "M42 — Nebulosa di Orione [emis.neb] [refl.neb]",
     type: "Nebulosa a emissione/riflessione",
     ra_deg: 83.82000,    // 05h 35m 16.8s
     dec_deg: -5.38750,   // -05° 23' 15"
@@ -93,7 +93,7 @@ const CATALOG = [
   },
   {
     id: "M31",
-    name: "M31 — Galassia di Andromeda",
+    name: "M31 — Galassia di Andromeda [galaxy]",
     type: "Galassia a spirale",
     ra_deg: 10.68471,    // 00h 42m 44.33s
     dec_deg: 41.26875,   // +41° 16' 07.5"
@@ -103,7 +103,7 @@ const CATALOG = [
   },
   {
     id: "M1",
-    name: "M1 — Nebulosa Granchio",
+    name: "M1 — Nebulosa Granchio [sn rem.]",
     type: "Resto di supernova",
     ra_deg: 83.63300,    // 05h 34m 31.9s
     dec_deg: 22.01444,   // +22° 00' 52"
@@ -113,7 +113,7 @@ const CATALOG = [
   },
   {
     id: "M45",
-    name: "M45 — Ammasso delle Pleiadi",
+    name: "M45 — Ammasso delle Pleiadi [open]",
     type: "Ammasso aperto",
     // CORRETTO (era 56.75000, incoerente col commento sessagesimale a
     // fianco): 03h47m24s equivale a 56.85000°, non 56.75000°.
@@ -125,7 +125,7 @@ const CATALOG = [
   },
   {
     id: "M57",
-    name: "M57 — Nebulosa Anello",
+    name: "M57 — Nebulosa Anello [plan.neb]",
     type: "Nebulosa planetaria",
     ra_deg: 283.39600,   // 18h 53m 35s
     dec_deg: 33.02917,   // +33° 01' 45"
@@ -134,40 +134,8 @@ const CATALOG = [
     source: "Wikipedia (EN) 'Ring Nebula'."
   },
   {
-    id: "M13",
-    name: "M13 — Ammasso Globulare di Ercole",
-    type: "Ammasso globulare",
-    ra_deg: 250.42300,   // 16h 41m 41s — scarto di ~8 arcosecondi rispetto al
-                          // valore ricalcolato dal commento (250.42083°),
-                          // verosimilmente solo arrotondamento
-    dec_deg: 36.46139,   // +36° 27' 35"
-    distance_ly: 22200.0,
-    distance_unc_ly: null,
-    source: "Wikipedia (EN) 'Messier 13'."
-  },
-  {
-    id: "M51",
-    name: "M51 — Galassia Vortice (Whirlpool Galaxy)",
-    type: "Galassia a spirale",
-    ra_deg: 202.46950,   // 13h 29m 52.7s
-    dec_deg: 47.19528,   // +47° 11' 43"
-    distance_ly: 23000000.0,
-    distance_unc_ly: null,
-    source: "Letteratura astronomica generale."
-  },
-  {
-    id: "M87",
-    name: "M87 — Galassia Virgo A",
-    type: "Galassia ellittica",
-    ra_deg: 187.70583,   // 12h 30m 49.4s
-    dec_deg: 12.39111,   // +12° 23' 28"
-    distance_ly: 53500000.0,
-    distance_unc_ly: null,
-    source: "Wikipedia (EN) 'Messier 87'."
-  },
-  {
     id: "NGC 7293",
-    name: "NGC 7293 — Nebulosa Elica (Helix Nebula)",
+    name: "NGC 7293 — Nebulosa Elica (Helix Nebula) [plan.neb]",
     type: "Nebulosa planetaria",
     ra_deg: 337.41083,   // 22h 29m 38.6s
     dec_deg: -20.83722,  // -20° 50' 14"
@@ -177,7 +145,7 @@ const CATALOG = [
   },
   {
     id: "M44",
-    name: "M44 — Ammasso del Presepio",
+    name: "M44 — Ammasso del Presepio [open]",
     type: "Ammasso aperto",
     ra_deg: 130.06667,   // 08h 40m 16s
     dec_deg: 19.67500,   // +19° 40' 30"
@@ -187,7 +155,7 @@ const CATALOG = [
   },
   {
     id: "IC 434",
-    name: "IC 434 — Nebulosa Testa di Cavallo",
+    name: "IC 434 — Nebulosa Testa di Cavallo [emis.neb] [dark neb.]",
     type: "Nebulosa a emissione / oscura",
     ra_deg: 85.24167,    // 05h 40m 59s — scarto di ~15 arcosecondi rispetto
                           // al valore ricalcolato dal commento (85.24583°),
@@ -199,7 +167,7 @@ const CATALOG = [
   },
   {
     id: "Sgr A*",
-    name: "Sagittarius A* — Centro Galattico",
+    name: "Sagittarius A* — Centro Galattico [SMBH]",
     type: "Buco nero supermassiccio",
     // Questa distanza (26.670 al ≈ 8,178 kpc, GRAVITY/ESO) è ora anche il
     // valore di R_SUN_LY usato altrove nel codice per bracci di spirale,
@@ -212,7 +180,7 @@ const CATALOG = [
   },
   {
     id: "M27",
-    name: "M27 — Nebulosa Manubrio (Dumbbell Nebula)",
+    name: "M27 — Nebulosa Manubrio (Dumbbell Nebula) [plan.neb]",
     type: "Nebulosa planetaria",
     ra_deg: 299.90100,   // 19h 59m 36.34s
     dec_deg: 22.72111,   // +22° 43' 16"
@@ -222,7 +190,7 @@ const CATALOG = [
   },
   {
     id: "VEGA",
-    name: "Vega (Alpha Lyrae)",
+    name: "Vega (Alpha Lyrae) [star]",
     type: "Stella (Principale della Lira)",
     ra_deg: 279.23473,   // 18h 36m 56.3s
     dec_deg: 38.78369,   // +38° 47' 01"
@@ -232,7 +200,7 @@ const CATALOG = [
   },
   {
     id: "ARCTURUS",
-    name: "Arturo (Alpha Boötis)",
+    name: "Arturo (Alpha Boötis) [star]",
     type: "Stella (Gigante arancione)",
     ra_deg: 213.91530,   // 14h 15m 39.7s
     dec_deg: 19.18222,   // +19° 10' 56"
@@ -242,7 +210,7 @@ const CATALOG = [
   },
   {
     id: "POLARIS",
-    name: "Stella Polare (Alpha Ursae Minoris)",
+    name: "Stella Polare (Alpha Ursae Minoris) [star]",
     type: "Stella (Supergigante / Cefeide)",
     ra_deg: 37.95456,    // 02h 31m 49.1s
     dec_deg: 89.26411,   // +89° 15' 51"
@@ -252,7 +220,7 @@ const CATALOG = [
   },
   {
     id: "ANTARES",
-    name: "Antares (Alpha Scorpii)",
+    name: "Antares (Alpha Scorpii) [star]",
     type: "Stella (Supergigante rossa)",
     ra_deg: 247.35192,   // 16h 29m 24.5s
     dec_deg: -26.43194,  // -26° 25' 55"
@@ -262,14 +230,1931 @@ const CATALOG = [
   },
   {
     id: "SIRIUS",
-    name: "Sirio (Alpha Canis Majoris)",
+    name: "Sirio (Alpha Canis Majoris) [star]",
     type: "Stella (Sistema binario)",
     ra_deg: 101.28715,   // 06h 45m 08.9s
     dec_deg: -16.71611,  // -16° 42' 58"
     distance_ly: 8.60,
     distance_unc_ly: 0.04,
     source: "Wikipedia (EN) 'Sirius'."
-  }
+  },
+
+  /* ==========================================================
+     33 oggetti Messier aggiuntivi (esclusi ammassi globulari,
+     gia' coperti sotto tramite il catalogo Harris, ed esclusi
+     tutti gli oggetti extragalattici tranne M31 come richiesto).
+     Esclusi anche M40 (doppia stellare non fisicamente legata,
+     non un vero oggetto di cielo profondo) e M73 (asterismo di
+     4 stelle non fisicamente legate) — non hanno una distanza
+     fisicamente definita come singolo oggetto.
+     ========================================================== */
+  {
+    id: "M6",
+    name: "M6 — Ammasso Farfalla [open]",
+    type: "Ammasso aperto",
+    ra_deg: 265.06917,
+    dec_deg: -32.24194,
+    distance_ly: 1590.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M7",
+    name: "M7 — Ammasso di Tolomeo [open]",
+    type: "Ammasso aperto",
+    ra_deg: 268.44708,
+    dec_deg: -34.84111,
+    distance_ly: 980.0,
+    distance_unc_ly: 33.0,
+    source: "Wikipedia (EN) 'Messier 7'"
+  },
+  {
+    id: "M8",
+    name: "M8 — Nebulosa Laguna [emis.neb]",
+    type: "Nebulosa a emissione / regione HII",
+    ra_deg: 270.90417,
+    dec_deg: -24.38667,
+    distance_ly: 4100.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M11",
+    name: "M11 — Ammasso Anatra Selvatica [open]",
+    type: "Ammasso aperto",
+    ra_deg: 282.76583,
+    dec_deg: -6.27194,
+    distance_ly: 6120.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M16",
+    name: "M16 — Nebulosa Aquila [open] [emis.neb]",
+    type: "Ammasso aperto + nebulosa a emissione",
+    ra_deg: 274.68792,
+    dec_deg: -13.79194,
+    distance_ly: 5700.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M17",
+    name: "M17 — Nebulosa Omega [emis.neb]",
+    type: "Regione HII",
+    ra_deg: 275.19583,
+    dec_deg: -16.17167,
+    distance_ly: 5500.0,
+    distance_unc_ly: 500.0,
+    source: "messier-objects.com (range 5000-6000 al, uso il valore medio)"
+  },
+  {
+    id: "M18",
+    name: "M18 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 274.98917,
+    dec_deg: -17.08889,
+    distance_ly: 4230.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 18'"
+  },
+  {
+    id: "M20",
+    name: "M20 — Nebulosa Trifida [emis.neb] [refl.neb] [dark neb.]",
+    type: "Nebulosa a emissione/riflessione/oscura",
+    ra_deg: 270.67500,
+    dec_deg: -22.97167,
+    distance_ly: 4100.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M21",
+    name: "M21 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 271.03583,
+    dec_deg: -22.50500,
+    distance_ly: 3930.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 21'"
+  },
+  {
+    id: "M23",
+    name: "M23 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 269.23708,
+    dec_deg: -18.98694,
+    distance_ly: 2050.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M24",
+    name: "M24 — Nube Stellare del Sagittario [star cloud]",
+    type: "Nube stellare (non un oggetto compatto)",
+    ra_deg: 274.20000,
+    dec_deg: -18.55000,
+    distance_ly: 10000.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com — NOTA: è una nube estesa (raggio ~600 al), non un oggetto puntiforme; la 'distanza' indicata è quella della parte vicina"
+  },
+  {
+    id: "M25",
+    name: "M25 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 277.93708,
+    dec_deg: -19.11389,
+    distance_ly: 2000.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 25'"
+  },
+  {
+    id: "M26",
+    name: "M26 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 281.31708,
+    dec_deg: -9.38611,
+    distance_ly: 5160.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M29",
+    name: "M29 — Torre di Raffreddamento [open]",
+    type: "Ammasso aperto",
+    ra_deg: 305.94292,
+    dec_deg: 38.48694,
+    distance_ly: 3740.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M34",
+    name: "M34 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 40.53083,
+    dec_deg: 42.72194,
+    distance_ly: 1500.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 34'"
+  },
+  {
+    id: "M35",
+    name: "M35 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 92.27208,
+    dec_deg: 24.33611,
+    distance_ly: 3870.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M36",
+    name: "M36 — Ammasso Girandola [open]",
+    type: "Ammasso aperto",
+    ra_deg: 84.08417,
+    dec_deg: 34.13500,
+    distance_ly: 4340.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M37",
+    name: "M37 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 88.07417,
+    dec_deg: 32.54500,
+    distance_ly: 4511.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M38",
+    name: "M38 — Ammasso Stella Marina [open]",
+    type: "Ammasso aperto",
+    ra_deg: 82.16708,
+    dec_deg: 35.82389,
+    distance_ly: 3480.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M39",
+    name: "M39 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 322.88917,
+    dec_deg: 48.24694,
+    distance_ly: 1010.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M41",
+    name: "M41 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 101.49917,
+    dec_deg: -20.71611,
+    distance_ly: 2300.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M43",
+    name: "M43 — Nebulosa di de Mairan [emis.neb]",
+    type: "Nebulosa a emissione (parte del complesso M42)",
+    ra_deg: 83.88250,
+    dec_deg: -5.29917,
+    distance_ly: 1300.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M46",
+    name: "M46 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 115.44500,
+    dec_deg: -14.84389,
+    distance_ly: 4920.0,
+    distance_unc_ly: 980.0,
+    source: "Wikipedia (EN) 'Messier 46'"
+  },
+  {
+    id: "M47",
+    name: "M47 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 114.14708,
+    dec_deg: -14.48889,
+    distance_ly: 1624.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com, coerente con fonte indipendente (498 pc)"
+  },
+  {
+    id: "M48",
+    name: "M48 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 123.41208,
+    dec_deg: -5.72611,
+    distance_ly: 2500.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN)/NASA — NOTA: forte disaccordo in letteratura, molte fonti (messier-objects.com, astropixels, freestarcharts) citano 1500 al invece di 2500 al"
+  },
+  {
+    id: "M50",
+    name: "M50 — Ammasso a Cuore [open]",
+    type: "Ammasso aperto",
+    ra_deg: 105.69792,
+    dec_deg: -8.33778,
+    distance_ly: 2870.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 50'"
+  },
+  {
+    id: "M52",
+    name: "M52 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 351.19500,
+    dec_deg: 61.59000,
+    distance_ly: 4600.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 52'"
+  },
+  {
+    id: "M67",
+    name: "M67 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 132.84583,
+    dec_deg: 11.81389,
+    distance_ly: 2750.0,
+    distance_unc_ly: 150.0,
+    source: "messier-objects.com (range 2600-2900 al, uso il valore medio)"
+  },
+  {
+    id: "M76",
+    name: "M76 — Piccola Manubrio [plan.neb]",
+    type: "Nebulosa planetaria",
+    ra_deg: 25.58192,
+    dec_deg: 51.57542,
+    distance_ly: 2500.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M78",
+    name: "M78 [refl.neb]",
+    type: "Nebulosa a riflessione",
+    ra_deg: 86.69458,
+    dec_deg: 0.01389,
+    distance_ly: 1350.0,
+    distance_unc_ly: null,
+    source: "messier-objects.com"
+  },
+  {
+    id: "M93",
+    name: "M93 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 116.12500,
+    dec_deg: -23.85667,
+    distance_ly: 3380.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 93'"
+  },
+  {
+    id: "M97",
+    name: "M97 — Nebulosa Gufo [plan.neb]",
+    type: "Nebulosa planetaria",
+    ra_deg: 168.69889,
+    dec_deg: 55.01903,
+    distance_ly: 2030.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Owl Nebula' — NOTA: disaccordo notevole in letteratura, altre fonti citano 2600-4140 al"
+  },
+  {
+    id: "M103",
+    name: "M103 [open]",
+    type: "Ammasso aperto",
+    ra_deg: 23.30000,
+    dec_deg: 60.70000,
+    distance_ly: 9400.0,
+    distance_unc_ly: null,
+    source: "Wikipedia (EN) 'Messier 103' — NOTA: altre fonti citano 8500-10000 al"
+  },
+
+  /* ==========================================================
+     157 ammassi globulari della Via Lattea (catalogo completo
+     Harris 1996, edizione dicembre 2010). Fonte unica per
+     posizione E distanza, verificata a campione (M13/NGC 6205,
+     Omega Centauri, M3, M4, M22) contro valori noti.
+     ========================================================== */
+  {
+    id: "NGC 104",
+    name: "NGC 104 — 47 Tuc [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 6.02363,
+    dec_deg: -72.08128,
+    distance_ly: 14677.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 288",
+    name: "NGC 288 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 13.18850,
+    dec_deg: -26.58261,
+    distance_ly: 29027.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 362",
+    name: "NGC 362 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 15.80942,
+    dec_deg: -70.84878,
+    distance_ly: 28049.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Whiting 1",
+    name: "Whiting 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 30.73750,
+    dec_deg: -3.25278,
+    distance_ly: 98173.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 1261",
+    name: "NGC 1261 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 48.06754,
+    dec_deg: -55.21622,
+    distance_ly: 53163.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 1",
+    name: "Pal 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 53.33350,
+    dec_deg: 79.58106,
+    distance_ly: 36203.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "AM 1",
+    name: "AM 1 — E 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 58.75958,
+    dec_deg: -49.61528,
+    distance_ly: 402150.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Eridanus",
+    name: "Eridanus [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 66.18542,
+    dec_deg: -21.18694,
+    distance_ly: 293866.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 2",
+    name: "Pal 2 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 71.52463,
+    dec_deg: 31.38150,
+    distance_ly: 88714.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 1851",
+    name: "NGC 1851 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 78.52817,
+    dec_deg: -40.04656,
+    distance_ly: 39464.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 1904",
+    name: "NGC 1904 — M79 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 81.04621,
+    dec_deg: -24.52472,
+    distance_ly: 42074.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 2298",
+    name: "NGC 2298 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 102.24754,
+    dec_deg: -36.00531,
+    distance_ly: 35224.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 2419",
+    name: "NGC 2419 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 114.53529,
+    dec_deg: 38.88244,
+    distance_ly: 269404.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Ko 2",
+    name: "Ko 2 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 119.57083,
+    dec_deg: 26.25500,
+    distance_ly: 113176.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pyxis",
+    name: "Pyxis [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 136.99083,
+    dec_deg: -37.22139,
+    distance_ly: 128505.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 2808",
+    name: "NGC 2808 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 138.01292,
+    dec_deg: -64.86350,
+    distance_ly: 31311.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "E 3",
+    name: "E 3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 140.23779,
+    dec_deg: -77.28189,
+    distance_ly: 26418.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 3",
+    name: "Pal 3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 151.38292,
+    dec_deg: 0.07167,
+    distance_ly: 301694.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 3201",
+    name: "NGC 3201 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 154.40342,
+    dec_deg: -46.41247,
+    distance_ly: 15981.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 4",
+    name: "Pal 4 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 172.32000,
+    dec_deg: 28.97358,
+    distance_ly: 354531.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Ko 1",
+    name: "Ko 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 179.82708,
+    dec_deg: 12.26000,
+    distance_ly: 157533.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 4147",
+    name: "NGC 4147 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 182.52625,
+    dec_deg: 18.54264,
+    distance_ly: 62948.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 4372",
+    name: "NGC 4372 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 186.43917,
+    dec_deg: -72.65900,
+    distance_ly: 18917.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Rup 106",
+    name: "Rup 106 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 189.66750,
+    dec_deg: -51.15028,
+    distance_ly: 69145.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 4590",
+    name: "NGC 4590 — M68 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 189.86658,
+    dec_deg: -26.74406,
+    distance_ly: 33594.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 4833",
+    name: "NGC 4833 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 194.89133,
+    dec_deg: -70.87650,
+    distance_ly: 21526.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5024",
+    name: "NGC 5024 — M53 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 198.23021,
+    dec_deg: 18.16817,
+    distance_ly: 58381.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5053",
+    name: "NGC 5053 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 199.11288,
+    dec_deg: 17.70025,
+    distance_ly: 56751.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5139",
+    name: "NGC 5139 — omega Cen [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 201.69683,
+    dec_deg: -47.47958,
+    distance_ly: 16960.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5272",
+    name: "NGC 5272 — M3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 205.54842,
+    dec_deg: 28.37728,
+    distance_ly: 33267.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5286",
+    name: "NGC 5286 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 206.61171,
+    dec_deg: -51.37425,
+    distance_ly: 38160.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "AM 4",
+    name: "AM 4 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 209.09042,
+    dec_deg: -27.16750,
+    distance_ly: 105022.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5466",
+    name: "NGC 5466 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 211.36371,
+    dec_deg: 28.53444,
+    distance_ly: 52185.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5634",
+    name: "NGC 5634 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 217.40512,
+    dec_deg: -5.97642,
+    distance_ly: 82191.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5694",
+    name: "NGC 5694 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 219.90121,
+    dec_deg: -26.53894,
+    distance_ly: 114154.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "IC 4499",
+    name: "IC 4499 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 225.07688,
+    dec_deg: -82.21369,
+    distance_ly: 61317.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5824",
+    name: "NGC 5824 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 225.99429,
+    dec_deg: -33.06822,
+    distance_ly: 104696.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 5",
+    name: "Pal 5 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 229.02188,
+    dec_deg: 0.11161,
+    distance_ly: 75668.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5897",
+    name: "NGC 5897 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 229.35208,
+    dec_deg: -21.01028,
+    distance_ly: 40769.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5904",
+    name: "NGC 5904 — M5 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 229.63842,
+    dec_deg: 2.08103,
+    distance_ly: 24461.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5927",
+    name: "NGC 5927 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 232.00287,
+    dec_deg: -50.67303,
+    distance_ly: 25114.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5946",
+    name: "NGC 5946 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 233.86883,
+    dec_deg: -50.65967,
+    distance_ly: 34572.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "BH 176",
+    name: "BH 176 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 234.78104,
+    dec_deg: -50.05272,
+    distance_ly: 61643.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 5986",
+    name: "NGC 5986 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 236.51250,
+    dec_deg: -37.78642,
+    distance_ly: 33920.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Lynga 7",
+    name: "Lynga 7 — BH184 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 242.76521,
+    dec_deg: -55.31778,
+    distance_ly: 26092.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 14",
+    name: "Pal 14 — AvdB [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 242.75250,
+    dec_deg: 14.95778,
+    distance_ly: 249509.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6093",
+    name: "NGC 6093 — M80 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 244.26004,
+    dec_deg: -22.97608,
+    distance_ly: 32615.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6121",
+    name: "NGC 6121 — M4 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 245.89675,
+    dec_deg: -26.52575,
+    distance_ly: 7175.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6101",
+    name: "NGC 6101 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 246.45050,
+    dec_deg: -72.20219,
+    distance_ly: 50228.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6144",
+    name: "NGC 6144 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 246.80775,
+    dec_deg: -26.02350,
+    distance_ly: 29027.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6139",
+    name: "NGC 6139 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 246.91821,
+    dec_deg: -38.84875,
+    distance_ly: 32941.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 3",
+    name: "Terzan 3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 247.16700,
+    dec_deg: -35.35347,
+    distance_ly: 26744.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6171",
+    name: "NGC 6171 — M107 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 248.13275,
+    dec_deg: -13.05378,
+    distance_ly: 20874.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "1636-283",
+    name: "1636-283 — ESO452-SC11 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 249.85604,
+    dec_deg: -28.39869,
+    distance_ly: 27070.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6205",
+    name: "NGC 6205 — M13 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 250.42183,
+    dec_deg: 36.45986,
+    distance_ly: 23157.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6229",
+    name: "NGC 6229 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 251.74496,
+    dec_deg: 47.52775,
+    distance_ly: 99477.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6218",
+    name: "NGC 6218 — M12 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 251.80908,
+    dec_deg: -1.94853,
+    distance_ly: 15655.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "FSR 1735",
+    name: "FSR 1735 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 253.04417,
+    dec_deg: -47.05806,
+    distance_ly: 31963.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6235",
+    name: "NGC 6235 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 253.35546,
+    dec_deg: -22.17744,
+    distance_ly: 37507.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6254",
+    name: "NGC 6254 — M10 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 254.28771,
+    dec_deg: -4.10031,
+    distance_ly: 14350.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6256",
+    name: "NGC 6256 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 254.88592,
+    dec_deg: -37.12139,
+    distance_ly: 33594.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 15",
+    name: "Pal 15 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 254.96250,
+    dec_deg: 0.53889,
+    distance_ly: 147096.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6266",
+    name: "NGC 6266 — M62 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 255.30333,
+    dec_deg: -30.11372,
+    distance_ly: 22178.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6273",
+    name: "NGC 6273 — M19 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 255.65750,
+    dec_deg: -26.26797,
+    distance_ly: 28701.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6284",
+    name: "NGC 6284 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 256.11879,
+    dec_deg: -24.76486,
+    distance_ly: 49901.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6287",
+    name: "NGC 6287 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 256.28804,
+    dec_deg: -22.70836,
+    distance_ly: 30658.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6293",
+    name: "NGC 6293 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 257.54250,
+    dec_deg: -26.58208,
+    distance_ly: 30984.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6304",
+    name: "NGC 6304 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 258.63437,
+    dec_deg: -29.46203,
+    distance_ly: 19243.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6316",
+    name: "NGC 6316 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 259.15542,
+    dec_deg: -28.14011,
+    distance_ly: 33920.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6341",
+    name: "NGC 6341 — M92 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 259.28079,
+    dec_deg: 43.13594,
+    distance_ly: 27070.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6325",
+    name: "NGC 6325 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 259.49671,
+    dec_deg: -23.76600,
+    distance_ly: 25440.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6333",
+    name: "NGC 6333 — M9 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 259.79692,
+    dec_deg: -18.51594,
+    distance_ly: 25766.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6342",
+    name: "NGC 6342 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 260.29200,
+    dec_deg: -19.58742,
+    distance_ly: 27723.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6356",
+    name: "NGC 6356 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 260.89554,
+    dec_deg: -17.81303,
+    distance_ly: 49249.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6355",
+    name: "NGC 6355 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 260.99412,
+    dec_deg: -26.35342,
+    distance_ly: 30006.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6352",
+    name: "NGC 6352 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 261.37129,
+    dec_deg: -48.42217,
+    distance_ly: 18264.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "IC 1257",
+    name: "IC 1257 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 261.78542,
+    dec_deg: -7.09306,
+    distance_ly: 81539.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 2",
+    name: "Terzan 2 — HP 3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 261.88792,
+    dec_deg: -30.80233,
+    distance_ly: 24461.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6366",
+    name: "NGC 6366 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 261.93433,
+    dec_deg: -5.07986,
+    distance_ly: 11415.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 4",
+    name: "Terzan 4 — HP 4 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 262.66250,
+    dec_deg: -31.59553,
+    distance_ly: 23483.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "HP 1",
+    name: "HP 1 — BH 229 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 262.77167,
+    dec_deg: -29.98167,
+    distance_ly: 26744.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6362",
+    name: "NGC 6362 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 262.97912,
+    dec_deg: -67.04833,
+    distance_ly: 24787.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Liller 1",
+    name: "Liller 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 263.35208,
+    dec_deg: -33.38900,
+    distance_ly: 26744.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6380",
+    name: "NGC 6380 — Ton 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 263.61667,
+    dec_deg: -39.06917,
+    distance_ly: 35551.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 1",
+    name: "Terzan 1 — HP 2 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 263.94917,
+    dec_deg: -30.46972,
+    distance_ly: 21852.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Ton 2",
+    name: "Ton 2 — Pismis 26 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 264.04375,
+    dec_deg: -38.55333,
+    distance_ly: 26744.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6388",
+    name: "NGC 6388 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 264.07179,
+    dec_deg: -44.73550,
+    distance_ly: 32289.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6402",
+    name: "NGC 6402 — M14 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 264.40042,
+    dec_deg: -3.24592,
+    distance_ly: 30332.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6401",
+    name: "NGC 6401 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 264.65250,
+    dec_deg: -23.90950,
+    distance_ly: 34572.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6397",
+    name: "NGC 6397 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 265.17538,
+    dec_deg: -53.67433,
+    distance_ly: 7501.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 6",
+    name: "Pal 6 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 265.92583,
+    dec_deg: -26.22250,
+    distance_ly: 18917.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6426",
+    name: "NGC 6426 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 266.22771,
+    dec_deg: 3.17014,
+    distance_ly: 67188.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Djorg 1",
+    name: "Djorg 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 266.86792,
+    dec_deg: -33.06556,
+    distance_ly: 44683.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 5",
+    name: "Terzan 5 — Terzan 11 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 267.02000,
+    dec_deg: -24.77917,
+    distance_ly: 22504.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6440",
+    name: "NGC 6440 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 267.21958,
+    dec_deg: -20.36025,
+    distance_ly: 27723.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6441",
+    name: "NGC 6441 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 267.55442,
+    dec_deg: -37.05144,
+    distance_ly: 37834.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 6",
+    name: "Terzan 6 — HP 5 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 267.69325,
+    dec_deg: -31.27539,
+    distance_ly: 22178.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6453",
+    name: "NGC 6453 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 267.71542,
+    dec_deg: -34.59917,
+    distance_ly: 37834.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "UKS 1",
+    name: "UKS 1 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 268.61333,
+    dec_deg: -24.14528,
+    distance_ly: 25440.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6496",
+    name: "NGC 6496 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 269.76533,
+    dec_deg: -44.26594,
+    distance_ly: 36855.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 9",
+    name: "Terzan 9 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 270.41167,
+    dec_deg: -26.83972,
+    distance_ly: 23157.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Djorg 2",
+    name: "Djorg 2 — ESO456-SC38 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 270.45458,
+    dec_deg: -27.82583,
+    distance_ly: 20547.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6517",
+    name: "NGC 6517 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 270.46050,
+    dec_deg: -8.95878,
+    distance_ly: 34572.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 10",
+    name: "Terzan 10 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 270.90167,
+    dec_deg: -26.07250,
+    distance_ly: 18917.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6522",
+    name: "NGC 6522 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 270.89175,
+    dec_deg: -30.03397,
+    distance_ly: 25114.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6535",
+    name: "NGC 6535 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 270.96046,
+    dec_deg: 0.29764,
+    distance_ly: 22178.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6528",
+    name: "NGC 6528 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 271.20683,
+    dec_deg: -30.05628,
+    distance_ly: 25766.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6539",
+    name: "NGC 6539 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 271.20700,
+    dec_deg: -7.58586,
+    distance_ly: 25440.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6540",
+    name: "NGC 6540 — Djorg 3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 271.53583,
+    dec_deg: -27.76528,
+    distance_ly: 17286.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6544",
+    name: "NGC 6544 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 271.83575,
+    dec_deg: -24.99733,
+    distance_ly: 9784.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6541",
+    name: "NGC 6541 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.00983,
+    dec_deg: -43.71489,
+    distance_ly: 24461.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "2MS-GC01",
+    name: "2MS-GC01 — 2MASS-GC01 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.09087,
+    dec_deg: -19.82972,
+    distance_ly: 11741.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "ESO-SC06",
+    name: "ESO-SC06 — ESO280-SC06 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.27500,
+    dec_deg: -46.42306,
+    distance_ly: 69797.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6553",
+    name: "NGC 6553 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.32333,
+    dec_deg: -25.90869,
+    distance_ly: 19569.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "2MS-GC02",
+    name: "2MS-GC02 — 2MASS-GC02 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.40208,
+    dec_deg: -20.77889,
+    distance_ly: 15981.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6558",
+    name: "NGC 6558 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.57333,
+    dec_deg: -31.76389,
+    distance_ly: 24135.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "IC 1276",
+    name: "IC 1276 — Pal 7 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 272.68417,
+    dec_deg: -7.20761,
+    distance_ly: 17612.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 12",
+    name: "Terzan 12 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 273.06583,
+    dec_deg: -22.74194,
+    distance_ly: 15655.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6569",
+    name: "NGC 6569 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 273.41167,
+    dec_deg: -31.82689,
+    distance_ly: 35551.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "BH 261",
+    name: "BH 261 — AL 3 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 273.52750,
+    dec_deg: -28.63500,
+    distance_ly: 21200.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "GLIMPSE02",
+    name: "GLIMPSE02 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 274.62708,
+    dec_deg: -16.97722,
+    distance_ly: 17938.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6584",
+    name: "NGC 6584 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 274.65667,
+    dec_deg: -52.21578,
+    distance_ly: 44031.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6624",
+    name: "NGC 6624 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 275.91879,
+    dec_deg: -30.36103,
+    distance_ly: 25766.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6626",
+    name: "NGC 6626 — M28 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 276.13671,
+    dec_deg: -24.86978,
+    distance_ly: 17938.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6638",
+    name: "NGC 6638 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 277.73375,
+    dec_deg: -25.49747,
+    distance_ly: 30658.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6637",
+    name: "NGC 6637 — M69 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 277.84625,
+    dec_deg: -32.34808,
+    distance_ly: 28701.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6642",
+    name: "NGC 6642 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 277.97542,
+    dec_deg: -23.47519,
+    distance_ly: 26418.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6652",
+    name: "NGC 6652 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 278.94013,
+    dec_deg: -32.99072,
+    distance_ly: 32615.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6656",
+    name: "NGC 6656 — M22 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 279.09975,
+    dec_deg: -23.90475,
+    distance_ly: 10437.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 8",
+    name: "Pal 8 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 280.37458,
+    dec_deg: -19.82583,
+    distance_ly: 41748.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6681",
+    name: "NGC 6681 — M70 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 280.80317,
+    dec_deg: -32.29211,
+    distance_ly: 29354.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "GLIMPSE01",
+    name: "GLIMPSE01 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 282.20708,
+    dec_deg: -1.49722,
+    distance_ly: 13698.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6712",
+    name: "NGC 6712 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 283.26792,
+    dec_deg: -8.70611,
+    distance_ly: 22504.8,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6715",
+    name: "NGC 6715 — M54 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 283.76387,
+    dec_deg: -30.47986,
+    distance_ly: 86431.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6717",
+    name: "NGC 6717 — Pal 9 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 283.77517,
+    dec_deg: -22.70147,
+    distance_ly: 23157.1,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6723",
+    name: "NGC 6723 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 284.88813,
+    dec_deg: -36.63225,
+    distance_ly: 28375.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6749",
+    name: "NGC 6749 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 286.31375,
+    dec_deg: 1.90083,
+    distance_ly: 25766.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6752",
+    name: "NGC 6752 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 287.71713,
+    dec_deg: -59.98456,
+    distance_ly: 13046.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6760",
+    name: "NGC 6760 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 287.80004,
+    dec_deg: 1.03047,
+    distance_ly: 24135.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6779",
+    name: "NGC 6779 — M56 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 289.14821,
+    dec_deg: 30.18347,
+    distance_ly: 30658.7,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 7",
+    name: "Terzan 7 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 289.43300,
+    dec_deg: -34.65772,
+    distance_ly: 74363.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 10",
+    name: "Pal 10 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 289.50875,
+    dec_deg: 18.57167,
+    distance_ly: 19243.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Arp 2",
+    name: "Arp 2 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 292.18379,
+    dec_deg: -30.35564,
+    distance_ly: 93280.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6809",
+    name: "NGC 6809 — M55 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 294.99879,
+    dec_deg: -30.96475,
+    distance_ly: 17612.4,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Terzan 8",
+    name: "Terzan 8 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 295.43504,
+    dec_deg: -33.99947,
+    distance_ly: 85779.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 11",
+    name: "Pal 11 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 296.31000,
+    dec_deg: -8.00722,
+    distance_ly: 43704.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6838",
+    name: "NGC 6838 — M71 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 298.44371,
+    dec_deg: 18.77919,
+    distance_ly: 13046.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6864",
+    name: "NGC 6864 — M75 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 301.51954,
+    dec_deg: -21.92117,
+    distance_ly: 68166.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6934",
+    name: "NGC 6934 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 308.54737,
+    dec_deg: 7.40447,
+    distance_ly: 50880.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 6981",
+    name: "NGC 6981 — M72 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 313.36542,
+    dec_deg: -12.53731,
+    distance_ly: 55446.5,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 7006",
+    name: "NGC 7006 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 315.37242,
+    dec_deg: 16.18733,
+    distance_ly: 134376.3,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 7078",
+    name: "NGC 7078 — M15 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 322.49304,
+    dec_deg: 12.16700,
+    distance_ly: 33920.2,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 7089",
+    name: "NGC 7089 — M2 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 323.36258,
+    dec_deg: 0.82325,
+    distance_ly: 37507.9,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 7099",
+    name: "NGC 7099 — M30 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 325.09217,
+    dec_deg: -23.17986,
+    distance_ly: 26418.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 12",
+    name: "Pal 12 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 326.66183,
+    dec_deg: -21.25261,
+    distance_ly: 61969.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "Pal 13",
+    name: "Pal 13 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 346.68517,
+    dec_deg: 12.77200,
+    distance_ly: 84800.6,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
+  {
+    id: "NGC 7492",
+    name: "NGC 7492 [glob.]",
+    type: "Ammasso globulare",
+    ra_deg: 347.11096,
+    dec_deg: -15.61150,
+    distance_ly: 85779.0,
+    distance_unc_ly: null,
+    source: "Harris W.E. 1996 (edizione dicembre 2010), catalogo McMaster (physics.mcmaster.ca/~harris/mwgc.dat)"
+  },
 ];
 
 /* =============================================================================
@@ -682,8 +2567,8 @@ const GRID_LABEL_DEFS = [
   { l: 180, b: 0,  text: 'l=180°' },
   { l: 270, b: 0,  text: 'l=270°' },
   { l: 45,  b: 0,  text: 'b=0°'   },
-  { l: 0,   b: 90, text: 'b=+90° (N)' },
-  { l: 0,   b: -90, text: 'b=−90° (S)' }
+  { l: 0,   b: 90, text: 'b=+90°' },
+  { l: 0,   b: -90, text: 'b=−90°' }
 ];
 const gridLabelEls = GRID_LABEL_DEFS.map(def => {
   const el = document.createElement('div');
