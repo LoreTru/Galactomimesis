@@ -2833,8 +2833,21 @@ function animate() {
 }
 animate();
 
-// avvio con il primo oggetto del catalogo
-loadObject(CATALOG[0]);
+// leggo oggetto da querystring
+const urlParams = new URLSearchParams(window.location.search);
+const presetValue = urlParams.get('obj');
+
+if (presetValue !== null) {
+  // Trova la select tramite il suo ID
+  const selectElement = document.getElementById('objectSelect');
+  if (selectElement) {
+    selectElement.value = presetValue;
+  }
+  loadObject(CATALOG[Number(presetValue)]);
+} else {
+	// avvio con il primo oggetto del catalogo
+	loadObject(CATALOG[0]);
+}
 </script>
 </body>
 </html>
