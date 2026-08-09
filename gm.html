@@ -45,8 +45,15 @@
 <div id="container">
   <div id="topbar">
     <select id="objectSelect"></select>
+    <select id="gridScaleSelect">
+      <option value="1">Griglia: 1× (Terra–oggetto)</option>
+      <option value="2">Griglia: 2×</option>
+      <option value="5">Griglia: 5×</option>
+      <option value="10">Griglia: 10×</option>
+      <option value="0.5">Griglia: 0.5×</option>
+    </select>
   </div>
-  <div id="hint">trascina per ruotare · rotella per zoom</div>
+  <div id="hint">trascina per ruotare · rotella/pinch per zoom</div>
   <div id="distlabel" style="display:none;"></div>
   <div id="armLabels"></div>
   <div id="info"></div>
@@ -108,7 +115,9 @@ const CATALOG = [
     id: "M45",
     name: "M45 — Ammasso delle Pleiadi",
     type: "Ammasso aperto",
-    ra_deg: 56.75000,    // 03h 47m 24s
+    // CORRETTO (era 56.75000, incoerente col commento sessagesimale a
+    // fianco): 03h47m24s equivale a 56.85000°, non 56.75000°.
+    ra_deg: 56.85000,    // 03h 47m 24s
     dec_deg: 24.11667,   // +24° 07' 00"
     distance_ly: 444.0,
     distance_unc_ly: 10.0,
@@ -128,7 +137,9 @@ const CATALOG = [
     id: "M13",
     name: "M13 — Ammasso Globulare di Ercole",
     type: "Ammasso globulare",
-    ra_deg: 250.42300,   // 16h 41m 41s
+    ra_deg: 250.42300,   // 16h 41m 41s — scarto di ~8 arcosecondi rispetto al
+                          // valore ricalcolato dal commento (250.42083°),
+                          // verosimilmente solo arrotondamento
     dec_deg: 36.46139,   // +36° 27' 35"
     distance_ly: 22200.0,
     distance_unc_ly: null,
@@ -178,7 +189,9 @@ const CATALOG = [
     id: "IC 434",
     name: "IC 434 — Nebulosa Testa di Cavallo",
     type: "Nebulosa a emissione / oscura",
-    ra_deg: 85.24167,    // 05h 40m 59s
+    ra_deg: 85.24167,    // 05h 40m 59s — scarto di ~15 arcosecondi rispetto
+                          // al valore ricalcolato dal commento (85.24583°),
+                          // verosimilmente solo arrotondamento
     dec_deg: -2.45833,   // -02° 27' 30"
     distance_ly: 1500.0,
     distance_unc_ly: null,
@@ -188,6 +201,9 @@ const CATALOG = [
     id: "Sgr A*",
     name: "Sagittarius A* — Centro Galattico",
     type: "Buco nero supermassiccio",
+    // Questa distanza (26.670 al ≈ 8,178 kpc, GRAVITY/ESO) è ora anche il
+    // valore di R_SUN_LY usato altrove nel codice per bracci di spirale,
+    // barra e griglia galattica — unificato per coerenza (era 8,0 kpc tondi).
     ra_deg: 266.41683,   // 17h 45m 40.04s
     dec_deg: -29.00781,  // -29° 00' 28.1"
     distance_ly: 26670.0,
@@ -383,7 +399,9 @@ function galacticPointToScenePosition(Xg, Yg, Zg) {
 
 function generateSpiralBackground() {
   const LY_PER_KPC = 3261.56;
-  const R_SUN_LY = 8.0 * LY_PER_KPC;
+  // Unificato con la voce "Sgr A*" del catalogo (GRAVITY/ESO): 26.670 al
+  // ≈ 8,178 kpc, non più i precedenti 8,0 kpc tondi.
+  const R_SUN_LY = 26670.0;
   const numArms = 4;
   const pitch = THREE.MathUtils.degToRad(12);
   const pointsPerArm = 900;
@@ -602,6 +620,13 @@ scene.add(targetDot);
 // Linea Terra-oggetto
 const lineMat = new THREE.LineBasicMaterial({ color: 0x556077 });
 let lineObj = null;
+let currentEntry = null;
+let gridScaleFactor = 1;
+
+function applyGridScale() {
+  if (!currentEntry) return;
+  galacticGrid.scale.setScalar(currentEntry.distance_ly * gridScaleFactor);
+}
 
 /* =============================================================================
    GRIGLIA DI COORDINATE GALATTICHE (centrata sulla Terra)
@@ -657,8 +682,8 @@ const GRID_LABEL_DEFS = [
   { l: 180, b: 0,  text: 'l=180°' },
   { l: 270, b: 0,  text: 'l=270°' },
   { l: 45,  b: 0,  text: 'b=0°'   },
-  { l: 0,   b: 90, text: 'b=+90°' },
-  { l: 0,   b: -90, text: 'b=−90°' }
+  { l: 0,   b: 90, text: 'b=+90° (N)' },
+  { l: 0,   b: -90, text: 'b=−90° (S)' }
 ];
 const gridLabelEls = GRID_LABEL_DEFS.map(def => {
   const el = document.createElement('div');
@@ -684,7 +709,8 @@ function updateGridLabels() {
 }
 
 /* =============================================================================
-   CONTROLLI ORBIT MANUALI (drag per ruotare, rotella per zoom)
+   CONTROLLI ORBIT MANUALI (drag per ruotare, rotella per zoom, pinch per zoom
+   touch)
    Implementati senza dipendere da THREE.OrbitControls, che non è incluso nel
    build core three.min.js e richiederebbe un addon separato non garantito
    sulla stessa CDN.
@@ -710,13 +736,65 @@ const controls = {
   }
 };
 
+/* Tracciamento multi-pointer: con 1 dito/puntatore attivo si ruota (come
+   prima), con 2 si passa automaticamente al pinch-to-zoom. Il mouse con
+   rotellina resta gestito separatamente più sotto (evento 'wheel', che sui
+   touch screen non esiste mai — da qui il bug: lo zoom mancava del tutto su
+   Android, non era invertito né rotto, semplicemente non era implementato
+   per il touch). */
+const activePointers = new Map(); // pointerId -> {x, y}
+let pinching = false;
+let lastPinchDistance = 0;
+
+function pinchDistance() {
+  const pts = Array.from(activePointers.values());
+  return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+}
+
 renderer.domElement.addEventListener('pointerdown', (e) => {
-  controls.dragging = true;
-  controls.lastX = e.clientX;
-  controls.lastY = e.clientY;
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (activePointers.size === 1) {
+    controls.dragging = true;
+    controls.lastX = e.clientX;
+    controls.lastY = e.clientY;
+  } else if (activePointers.size === 2) {
+    controls.dragging = false;
+    pinching = true;
+    lastPinchDistance = pinchDistance();
+  }
 });
-window.addEventListener('pointerup', () => controls.dragging = false);
+window.addEventListener('pointerup', (e) => {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size === 1) {
+    // resta un dito: riprende la rotazione da qui, senza salti
+    const [remaining] = activePointers.values();
+    pinching = false;
+    controls.dragging = true;
+    controls.lastX = remaining.x;
+    controls.lastY = remaining.y;
+  } else if (activePointers.size === 0) {
+    pinching = false;
+    controls.dragging = false;
+  }
+});
+window.addEventListener('pointercancel', (e) => {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size < 2) pinching = false;
+  if (activePointers.size === 0) controls.dragging = false;
+});
 window.addEventListener('pointermove', (e) => {
+  if (!activePointers.has(e.pointerId)) return;
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pinching && activePointers.size === 2) {
+    const dist = pinchDistance();
+    const ratio = dist / lastPinchDistance;
+    lastPinchDistance = dist;
+    controls.radius = Math.max(controls.minRadius, Math.min(controls.maxRadius, controls.radius / ratio));
+    controls.update();
+    return;
+  }
+
   if (!controls.dragging) return;
   const dx = e.clientX - controls.lastX;
   const dy = e.clientY - controls.lastY;
@@ -752,6 +830,11 @@ renderer.domElement.addEventListener('wheel', (e) => {
    scegliere il raggio della camera per ottenere una composizione prevedibile.
    ============================================================================= */
 function loadObject(entry) {
+  currentEntry = entry;
+  // cambiando oggetto, il fattore di scala della griglia torna a 1×
+  gridScaleFactor = 1;
+  const gridScaleSelectEl = document.getElementById('gridScaleSelect');
+  if (gridScaleSelectEl) gridScaleSelectEl.value = '1';
   const pos = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
   targetMesh.position.copy(pos);
   targetDot.geometry.setFromPoints([pos]);
@@ -801,10 +884,9 @@ function loadObject(entry) {
   camera.updateProjectionMatrix();
   controls.update();
 
-  // griglia galattica: raggio proporzionato alla vista corrente, abbastanza
-  // dietro la posizione iniziale della camera da fare da sfondo senza
-  // tagliare oggetto/Terra
-  galacticGrid.scale.setScalar(fitDistance * 3);
+  // griglia galattica: raggio pari alla distanza dell'oggetto selezionato,
+  // moltiplicata per il fattore scelto nel menu dedicato (default 1×)
+  applyGridScale();
 
   updateInfoPanel(entry);
 }
@@ -839,6 +921,12 @@ CATALOG.forEach((entry, i) => {
   select.appendChild(opt);
 });
 select.addEventListener('change', () => loadObject(CATALOG[select.value]));
+
+const gridScaleSelect = document.getElementById('gridScaleSelect');
+gridScaleSelect.addEventListener('change', () => {
+  gridScaleFactor = parseFloat(gridScaleSelect.value);
+  applyGridScale();
+});
 
 /* =============================================================================
    RESIZE + RENDER LOOP
