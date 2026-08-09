@@ -26,11 +26,21 @@
   #hint { position:absolute; top:14px; right:14px; color: var(--muted); font-size:12px; z-index:10; }
   #info { position:absolute; bottom:12px; left:12px; right:12px; max-width:480px;
     background: var(--panel-bg); border:1px solid var(--border); border-radius:8px;
-    padding:12px 14px; color: var(--text); font-size:13px; line-height:1.5; z-index:10; }
-  #info h3 { margin:0 0 6px 0; font-size:16px; color: var(--accent); }
+    padding:12px 14px; color: var(--text); font-size:13px; line-height:1.5; z-index:10;
+    transition: width 0.15s ease, height 0.15s ease, padding 0.15s ease, border-radius 0.15s ease; }
+  #info h3 { margin:0 0 6px 0; font-size:16px; color: var(--accent); padding-right:22px; }
   #info .row { color: var(--muted); margin:2px 0; }
   #info .warn { color: var(--warn); margin-top:8px; font-size:11.5px; }
   #info .src { color: var(--muted); margin-top:6px; font-size:11px; font-style:italic; }
+  #infoToggle { position:absolute; top:8px; right:8px; width:22px; height:22px;
+    border-radius:50%; border:1px solid var(--border); background:rgba(255,255,255,0.06);
+    color: var(--text); cursor:pointer; font-size:13px; line-height:1; display:flex;
+    align-items:center; justify-content:center; z-index:11; user-select:none; }
+  #info.collapsed { width:40px; max-width:40px; height:40px; padding:0; right:auto;
+    border-radius:50%; cursor:pointer; overflow:hidden; }
+  #info.collapsed #infoContent { display:none; }
+  #info.collapsed #infoToggle { position:static; width:100%; height:100%; border-radius:50%;
+    border:1px solid var(--border); font-size:15px; }
   #distlabel { position:absolute; pointer-events:none; color: var(--accent); font-size:12px;
     background: rgba(5,7,13,0.7); padding:2px 6px; border-radius:4px; z-index:9; white-space:nowrap; }
   #armLabels { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:8; }
@@ -56,7 +66,10 @@
   <div id="hint">trascina per ruotare · rotella/pinch per zoom</div>
   <div id="distlabel" style="display:none;"></div>
   <div id="armLabels"></div>
-  <div id="info"></div>
+  <div id="info">
+    <button id="infoToggle" title="Comprimi">−</button>
+    <div id="infoContent"></div>
+  </div>
 </div>
 
 <!-- Correzione rispetto alla versione precedente: cdnjs non pubblica più una
@@ -2567,8 +2580,8 @@ const GRID_LABEL_DEFS = [
   { l: 180, b: 0,  text: 'l=180°' },
   { l: 270, b: 0,  text: 'l=270°' },
   { l: 45,  b: 0,  text: 'b=0°'   },
-  { l: 0,   b: 90, text: 'b=+90°' },
-  { l: 0,   b: -90, text: 'b=−90°' }
+  { l: 0,   b: 90, text: 'b=+90° (N)' },
+  { l: 0,   b: -90, text: 'b=−90° (S)' }
 ];
 const gridLabelEls = GRID_LABEL_DEFS.map(def => {
   const el = document.createElement('div');
@@ -2778,14 +2791,14 @@ function loadObject(entry) {
 
 
 function updateInfoPanel(entry) {
-  const info = document.getElementById('info');
+  const infoContent = document.getElementById('infoContent');
   const uncStr = entry.distance_unc_ly
     ? ` ± ${entry.distance_unc_ly.toLocaleString('it-IT')}`
     : '';
   const distStr = entry.distance_ly >= 1e6
     ? (entry.distance_ly / 1e6).toLocaleString('it-IT', {maximumFractionDigits: 2}) + ' milioni di anni luce'
     : entry.distance_ly.toLocaleString('it-IT') + uncStr + ' anni luce';
-  info.innerHTML = `
+  infoContent.innerHTML = `
     <h3>${entry.name}</h3>
     <div class="row">${entry.type}</div>
     <div class="row">Distanza dalla Terra: ${distStr}</div>
@@ -2794,6 +2807,31 @@ function updateInfoPanel(entry) {
     <div class="src">Fonte: ${entry.source}</div>
   `;
 }
+
+/* =============================================================================
+   PANNELLO INFO COLLASSABILE
+   Lo stato (collassato/espanso) non viene resettato cambiando oggetto — resta
+   come l'utente l'ha impostato, è una preferenza di interfaccia, non legata
+   al singolo oggetto.
+   ============================================================================= */
+const infoEl = document.getElementById('info');
+const infoToggle = document.getElementById('infoToggle');
+let infoCollapsed = false;
+
+function setInfoCollapsed(collapsed) {
+  infoCollapsed = collapsed;
+  infoEl.classList.toggle('collapsed', collapsed);
+  infoToggle.textContent = collapsed ? 'i' : '−';
+  infoToggle.title = collapsed ? 'Espandi' : 'Comprimi';
+}
+
+infoToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setInfoCollapsed(!infoCollapsed);
+});
+infoEl.addEventListener('click', () => {
+  if (infoCollapsed) setInfoCollapsed(false);
+});
 
 /* =============================================================================
    UI: selettore catalogo
@@ -2836,7 +2874,6 @@ animate();
 // leggo oggetto da querystring
 const urlParams = new URLSearchParams(window.location.search);
 const presetValue = urlParams.get('obj');
-
 if (presetValue !== null) {
   // Trova la select tramite il suo ID
   const selectElement = document.getElementById('objectSelect');
