@@ -48,7 +48,7 @@
   .armLabel { position:absolute; transform: translate(-50%, -50%); color:#9fb3d9; font-size:11px;
     letter-spacing:0.04em; text-shadow: 0 0 4px rgba(5,7,13,0.9), 0 0 2px rgba(5,7,13,0.9);
     white-space:nowrap; }
-  .gridLabel { position:absolute; transform: translate(-50%, -50%); color:#5d7aad; font-size:10px;
+  .gridLabel { position:absolute; transform: translate(-50%, -50%); color:#7fb877; font-size:10px;
     text-shadow: 0 0 4px rgba(5,7,13,0.9), 0 0 2px rgba(5,7,13,0.9); white-space:nowrap; }
 </style>
 </head>
@@ -2575,8 +2575,8 @@ function galacticGridPoint(lDeg, bDeg) {
 
 const galacticGrid = new THREE.Group();
 (function buildGalacticGrid() {
-  const gridMat = new THREE.LineBasicMaterial({ color: 0x3a4a66, transparent: true, opacity: 0.3 });
-  const equatorMat = new THREE.LineBasicMaterial({ color: 0x6f8fc4, transparent: true, opacity: 0.55 });
+  const gridMat = new THREE.LineBasicMaterial({ color: 0x3e6d3b, transparent: true, opacity: 0.35 });
+  const equatorMat = new THREE.LineBasicMaterial({ color: 0x6fbf68, transparent: true, opacity: 0.6 });
 
   // meridiani: longitudine galattica costante, ogni 30°, da b=-90° a b=+90°
   for (let lDeg = 0; lDeg < 360; lDeg += 30) {
