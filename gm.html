@@ -16,14 +16,15 @@
   }
   html, body { margin:0; padding:0; height:100%; background: var(--bg); overflow:hidden;
     font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
-  #container { position:relative; width:100%; height:100vh; }
+  #container { position:relative; width:100%; height:100vh; height:100dvh; }
   canvas { display:block; touch-action:none; cursor: grab; }
   canvas:active { cursor: grabbing; }
   #topbar { position:absolute; top:12px; left:12px; right:12px;
-    display:flex; gap:8px; align-items:center; z-index:10; }
+    display:flex; flex-direction:column; gap:8px; z-index:10; }
   select { background: var(--panel-bg); color: var(--text); border:1px solid var(--border);
     border-radius:6px; padding:8px 10px; font-size:14px; max-width:340px; }
   #hint { position:absolute; top:14px; right:14px; color: var(--muted); font-size:12px; z-index:10; }
+  #disclaimer { position:absolute; bottom:14px; right:14px; color: var(--muted); font-size:12px; z-index:10; }
   #info { position:absolute; bottom:12px; left:12px; right:12px; max-width:480px;
     background: var(--panel-bg); border:1px solid var(--border); border-radius:8px;
     padding:12px 14px; color: var(--text); font-size:13px; line-height:1.5; z-index:10;
@@ -55,15 +56,21 @@
 <div id="container">
   <div id="topbar">
     <select id="objectSelect"></select>
+    <select id="pivotSelect">
+      <option value="earth">Perno: Terra</option>
+      <option value="gc">Perno: Centro Galattico</option>
+    </select>
     <select id="gridScaleSelect">
       <option value="1">Griglia: 1× (Terra–oggetto)</option>
       <option value="2">Griglia: 2×</option>
       <option value="5">Griglia: 5×</option>
       <option value="10">Griglia: 10×</option>
+      <option value="50">Griglia: 50×</option>
       <option value="0.5">Griglia: 0.5×</option>
     </select>
   </div>
   <div id="hint">trascina per ruotare · rotella/pinch per zoom</div>
+  <div id="disclaimer">(© 2026 - Lorenzo Trumino)</div>
   <div id="distlabel" style="display:none;"></div>
   <div id="armLabels"></div>
   <div id="info">
@@ -2328,8 +2335,9 @@ function generateSpiralBackground() {
       const scaleHeight = r * 0.02; // spessore del disco, scelta illustrativa
       const Zc = (Math.random() - 0.5) * scaleHeight * 2;
 
-      // da centro-galattiche a eliocentriche (Terra/Sole all'origine)
-      const { pos } = galacticPointToScenePosition(Xc + R_SUN_LY, Yc, Zc);
+      // coordinate galattocentriche, ruotate (non più traslate: l'origine
+      // della scena ora E' il Centro Galattico) verso gli assi equatoriali
+      const { pos } = galacticPointToScenePosition(Xc, Yc, Zc);
       positions.push(pos.x, pos.y, pos.z);
 
       // punto di ancoraggio per l'etichetta: centro geometrico del braccio
@@ -2339,7 +2347,7 @@ function generateSpiralBackground() {
         const phiMid = theta + armOffset;
         const rMid = rMidKpc * LY_PER_KPC;
         const { pos: midPos } = galacticPointToScenePosition(
-          rMid * Math.cos(phiMid) + R_SUN_LY, rMid * Math.sin(phiMid), 0);
+          rMid * Math.cos(phiMid), rMid * Math.sin(phiMid), 0);
         midPoint = midPos;
       }
     }
@@ -2349,6 +2357,26 @@ function generateSpiralBackground() {
 }
 
 const galaxyStructure = generateSpiralBackground();
+
+/* =============================================================================
+   CAMBIO DI PERNO: origine della scena sul Centro Galattico, non più sulla
+   Terra.
+
+   Finora l'origine (0,0,0) della scena era la Terra, e ogni posizione veniva
+   calcolata come vettore Terra->oggetto. Ora l'origine è il Centro Galattico:
+   la Terra diventa un punto spostato (EARTH_POS), e ogni posizione si ottiene
+   sommando EARTH_POS al vettore Terra->oggetto già calcolato come prima (la
+   traslazione dell'origine non cambia direzione/lunghezza di un vettore
+   relativo, si somma solo il nuovo offset).
+
+   EARTH_POS = -(vettore Terra->Centro Galattico) — verificabile: se il Centro
+   Galattico è all'origine, la Terra deve stare esattamente all'opposto del
+   vettore che va da Terra al Centro Galattico.
+   ============================================================================= */
+const EARTH_POS = (function computeEarthPos() {
+  const gc = galacticToEquatorial(0, 0);
+  return raDecDistToCartesian(gc.ra, gc.dec, galaxyStructure.R_SUN_LY).multiplyScalar(-1);
+})();
 
 (function addSpiralBackground() {
   const geo = new THREE.BufferGeometry();
@@ -2400,8 +2428,8 @@ function galacticDirToSceneDir(Xg, Yg, Zg) {
   const LY_PER_KPC = 3261.56;
   const barAngle = THREE.MathUtils.degToRad(27);
 
-  const gc = galacticToEquatorial(0, 0);
-  const gcPos = raDecDistToCartesian(gc.ra, gc.dec, galaxyStructure.R_SUN_LY);
+  // Il Centro Galattico è ora l'origine della scena: la barra resta centrata
+  // a (0,0,0), non serve più calcolare la posizione del Centro Galattico.
   const ngpDir = raDecDistToCartesian(192.85948, 27.12825, 1).normalize();
 
   // direzione dell'asse lungo della barra nel sistema galattico eliocentrico
@@ -2424,14 +2452,12 @@ function galacticDirToSceneDir(Xg, Yg, Zg) {
   const bar = new THREE.Mesh(geo, barMat);
   bar.scale.set(semiLong, semiInPlane, semiVertical);
   bar.quaternion.copy(barQuaternion);
-  bar.position.copy(gcPos);
   scene.add(bar);
 
   const nucleusMat = new THREE.MeshBasicMaterial({ color: 0xffe6b3, transparent: true, opacity: 0.55 });
   const nucleus = new THREE.Mesh(geo, nucleusMat);
   const nucleusSize = semiLong * 0.12;
   nucleus.scale.setScalar(nucleusSize);
-  nucleus.position.copy(gcPos);
   scene.add(nucleus);
 
   // nube di punti entro il volume della barra, per un aspetto granulare
@@ -2450,7 +2476,7 @@ function galacticDirToSceneDir(Xg, Yg, Zg) {
     const bias = Math.pow(Math.random(), 0.6); // 0..1, concentra punti verso il centro
     const local = new THREE.Vector3(u, v, w).normalize().multiplyScalar(bias);
     local.set(local.x * semiLong, local.y * semiInPlane, local.z * semiVertical);
-    local.applyQuaternion(barQuaternion).add(gcPos);
+    local.applyQuaternion(barQuaternion);
     positions[i*3] = local.x; positions[i*3+1] = local.y; positions[i*3+2] = local.z;
   }
   const pgeo = new THREE.BufferGeometry();
@@ -2487,9 +2513,12 @@ function updateArmLabels() {
 
 // Marcatore Terra (dimensione arbitraria, non in scala — vedi nota in UI)
 // Colore azzurro intenso, distinguibile a colpo d'occhio dall'oggetto target
+// Posizionato su EARTH_POS: l'origine della scena ora è il Centro Galattico,
+// non più la Terra.
 const earthGeo = new THREE.SphereGeometry(1, 24, 24);
 const earthMat = new THREE.MeshBasicMaterial({ color: 0x1ec8ff });
 const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+earthMesh.position.copy(EARTH_POS);
 scene.add(earthMesh);
 
 // Marcatore oggetto target — rosso intenso
@@ -2504,7 +2533,7 @@ scene.add(targetMesh);
    depthTest:false + renderOrder alto: restano sempre in primo piano, mai
    nascosti da altri elementi della scena. */
 const earthDotMat = new THREE.PointsMaterial({ color: 0x1ec8ff, size: 7, sizeAttenuation: false, depthTest: false });
-const earthDotGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0)]);
+const earthDotGeo = new THREE.BufferGeometry().setFromPoints([EARTH_POS]);
 const earthDot = new THREE.Points(earthDotGeo, earthDotMat);
 earthDot.renderOrder = 999;
 scene.add(earthDot);
@@ -2520,6 +2549,7 @@ const lineMat = new THREE.LineBasicMaterial({ color: 0x556077 });
 let lineObj = null;
 let currentEntry = null;
 let gridScaleFactor = 1;
+let pivotMode = 'earth'; // 'earth' oppure 'gc'
 
 function applyGridScale() {
   if (!currentEntry) return;
@@ -2563,6 +2593,11 @@ const galacticGrid = new THREE.Group();
     galacticGrid.add(new THREE.LineLoop(geo, bDeg === 0 ? equatorMat : gridMat));
   }
 })();
+// Ancorata a EARTH_POS: le coordinate galattiche (l, b) sono per definizione
+// centrate sul Sole/Terra, non sul Centro Galattico — anche se ora è
+// quest'ultimo l'origine della scena, la griglia deve restare sulla Terra
+// per avere ancora un significato fisico corretto.
+galacticGrid.position.copy(EARTH_POS);
 scene.add(galacticGrid);
 
 /* =============================================================================
@@ -2595,7 +2630,7 @@ function updateGridLabels() {
   const w = container.clientWidth, h = container.clientHeight;
   const radius = galacticGrid.scale.x;
   gridLabelEls.forEach(({ el, unitDir }) => {
-    const position = unitDir.clone().multiplyScalar(radius);
+    const position = unitDir.clone().multiplyScalar(radius).add(EARTH_POS);
     const viewSpace = position.clone().applyMatrix4(camera.matrixWorldInverse);
     if (viewSpace.z > 0) { el.style.display = 'none'; return; }
     const ndc = position.clone().project(camera);
@@ -2733,10 +2768,14 @@ function loadObject(entry) {
   gridScaleFactor = 1;
   const gridScaleSelectEl = document.getElementById('gridScaleSelect');
   if (gridScaleSelectEl) gridScaleSelectEl.value = '1';
-  const pos = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
+
+  // vettore Terra->oggetto (invariato: dipende solo da RA/Dec/distanza,
+  // non dall'origine della scena), poi sommato a EARTH_POS per ottenere la
+  // posizione assoluta nel sistema centrato sul Centro Galattico
+  const posFromEarth = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
+  const pos = posFromEarth.clone().add(EARTH_POS);
   targetMesh.position.copy(pos);
   targetDot.geometry.setFromPoints([pos]);
-  // earthDot resta sempre all'origine, nessun aggiornamento necessario
 
   // dimensione marcatori scalata sulla distanza, SOLO per visibilità — non è
   // la dimensione fisica reale dell'oggetto né della Terra
@@ -2745,35 +2784,44 @@ function loadObject(entry) {
   targetMesh.scale.setScalar(Math.max(markerScale, 0.001));
 
   if (lineObj) scene.remove(lineObj);
-  const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), pos]);
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([EARTH_POS, pos]);
   lineObj = new THREE.Line(lineGeo, lineMat);
   scene.add(lineObj);
 
   const fovRad = THREE.MathUtils.degToRad(camera.fov);
-  const objDir = pos.clone().normalize();
 
-  // due direzioni perpendicolari a objDir, per posizionare la camera con un
-  // po' di elevazione mantenendo l'esatta perpendicolarità (qualunque
-  // combinazione lineare di due vettori perpendicolari a objDir resta
-  // perpendicolare a objDir)
+  /* Inquadratura camera con perno parametrico (Terra o Centro Galattico,
+     scelto dall'utente in #pivotSelect). Stessa formula a sfera-limite in
+     entrambi i casi: una sfera centrata sul perno, di raggio pari alla PIÙ
+     GRANDE delle due distanze dal perno (Terra e oggetto), contiene sempre
+     entrambi i punti — una camera a distanza (raggio/sin(metà FOV)) da quella
+     sfera li vede sempre entrambi, qualunque sia l'angolo di rotazione.
+
+     Quando il perno è la Terra, questa stessa formula si riduce da sola al
+     comportamento della versione precedente: la "distanza Terra-perno" è
+     zero, quindi il raggio della sfera-limite è semplicemente la distanza
+     dell'oggetto — non serve una logica separata per i due casi. */
+  const pivotTarget = (pivotMode === 'gc') ? new THREE.Vector3(0, 0, 0) : EARTH_POS.clone();
+  const boundRadius = Math.max(EARTH_POS.distanceTo(pivotTarget), pos.distanceTo(pivotTarget));
+
+  const midPoint = EARTH_POS.clone().add(pos).multiplyScalar(0.5).sub(pivotTarget);
+  const midDir = midPoint.lengthSq() > 1e-6 ? midPoint.normalize() : new THREE.Vector3(0, 0, 1);
   let refUp = new THREE.Vector3(0, 0, 1);
-  if (Math.abs(objDir.dot(refUp)) > 0.98) refUp = new THREE.Vector3(0, 1, 0);
-  const side = new THREE.Vector3().crossVectors(objDir, refUp).normalize();
-  const vert = new THREE.Vector3().crossVectors(objDir, side).normalize();
+  if (Math.abs(midDir.dot(refUp)) > 0.98) refUp = new THREE.Vector3(0, 1, 0);
+  const side = new THREE.Vector3().crossVectors(midDir, refUp).normalize();
+  const vert = new THREE.Vector3().crossVectors(midDir, side).normalize();
   const tiltRad = THREE.MathUtils.degToRad(25);
   const perpDir = new THREE.Vector3()
     .addScaledVector(side, Math.cos(tiltRad))
     .addScaledVector(vert, Math.sin(tiltRad))
     .normalize();
 
-  // raggio camera: vogliamo che l'oggetto compaia a circa metà dell'angolo
-  // di campo dal centro (composizione con margine, non al bordo)
-  const targetOffsetRad = 0.5 * (fovRad / 2);
-  const fitDistance = entry.distance_ly / Math.tan(targetOffsetRad);
+  const padding = 1.4;
+  const fitDistance = (boundRadius * padding) / Math.sin(fovRad / 2);
 
-  controls.target.set(0, 0, 0);
+  controls.target.copy(pivotTarget);
   controls.radius = fitDistance;
-  controls.minRadius = fitDistance * 0.1;
+  controls.minRadius = fitDistance * 0.02;
   controls.maxRadius = fitDistance * 80;
   controls.theta = Math.atan2(perpDir.y, perpDir.x);
   controls.phi = Math.acos(perpDir.z);
@@ -2783,7 +2831,8 @@ function loadObject(entry) {
   controls.update();
 
   // griglia galattica: raggio pari alla distanza dell'oggetto selezionato,
-  // moltiplicata per il fattore scelto nel menu dedicato (default 1×)
+  // moltiplicata per il fattore scelto nel menu dedicato (default 1×) —
+  // resta ancorata alla Terra (vedi galacticGrid.position), non al perno
   applyGridScale();
 
   updateInfoPanel(entry);
@@ -2844,6 +2893,21 @@ CATALOG.forEach((entry, i) => {
   select.appendChild(opt);
 });
 select.addEventListener('change', () => loadObject(CATALOG[select.value]));
+
+const pivotSelect = document.getElementById('pivotSelect');
+pivotSelect.addEventListener('change', () => {
+  pivotMode = pivotSelect.value;
+  if (currentEntry) {
+    // loadObject resetta anche il fattore di scala della griglia (pensato
+    // per il cambio oggetto, non per il cambio perno) — lo salvo e lo
+    // ripristino per evitare l'effetto collaterale
+    const savedGridScale = gridScaleFactor;
+    loadObject(currentEntry);
+    gridScaleFactor = savedGridScale;
+    gridScaleSelect.value = String(savedGridScale);
+    applyGridScale();
+  }
+});
 
 const gridScaleSelect = document.getElementById('gridScaleSelect');
 gridScaleSelect.addEventListener('change', () => {
