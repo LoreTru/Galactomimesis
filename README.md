@@ -1,10 +1,10 @@
-# Galactomimesi
+# Galactomimesis
 
 **A 3D view of where you are looking in the Milky Way.**
 
-Galactomimesi is a lightweight, browser-based 3D visualizer for amateur astronomers. It represents the Milky Way, the Earth and a chosen deep-sky objects in a common galactic reference frame, making it possible to visualize the direction of observation from Earth and the position of an object within the Galaxy.
+Galactomimesis is a lightweight, browser-based 3D visualizer for amateur astronomers. It represents the Milky Way, the Earth and a chosen deep-sky objects in a common galactic reference frame, making it possible to visualize the direction of observation from Earth and the position of an object within the Galaxy.
 
-While a planetarium shows **where an object is in the sky**, Galactomimesi shows **where you are looking in the Galaxy**.
+While a planetarium shows **where an object is in the sky**, Galactomimesis shows **where you are looking in the Galaxy**.
 
 The application is entirely client-side and requires no installation or backend. It is built with HTML, CSS and JavaScript, using Three.js-for  3D rendering. Objects can be selected directly or passed through the URL query string, allowing specific views to be shared easily.
 
