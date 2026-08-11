@@ -1,4 +1,14 @@
-# Galactomimesis
-A Milky Way simulator to locate deep sky objects in a relative way from the Earth.
+# Galactomimesi
 
-Main branch published at https://loretru.github.io/Galactomimesis/ 
+**A 3D view of where you are looking in the Milky Way.**
+
+Galactomimesi is a lightweight, browser-based 3D visualizer for amateur astronomers. It represents the Milky Way, the Earth and a chosen deep-sky objects in a common galactic reference frame, making it possible to visualize the direction of observation from Earth and the position of an object within the Galaxy.
+
+While a planetarium shows **where an object is in the sky**, Galactomimesi shows **where you are looking in the Galaxy**.
+
+The application is entirely client-side and requires no installation or backend. It is built with HTML, CSS and JavaScript, using Three.js-for  3D rendering. Objects can be selected directly or passed through the URL query string, allowing specific views to be shared easily.
+
+The Galactic structure is a simplified visual model based on astronomical literature. It is intended for spatial visualization and didactic use, not as a precise reconstruction of the Milky Way.
+
+**Live application:** https://loretru.github.io/Galactomimesis/
+
