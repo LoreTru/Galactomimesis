@@ -1,3 +1,8 @@
+/* 
+	GALACTOMIMESIS V. 0.2
+	Source and license at: https://github.com/LoreTru/Galactomimesis
+*/
+
 
 import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js";
 
@@ -794,17 +799,41 @@ function animate() {
 }
 animate();
 
-// leggo oggetto da querystring
-const urlParams = new URLSearchParams(window.location.search);
-const presetValue = urlParams.get('obj');
-if (presetValue !== null) {
-  // Trova la select tramite il suo ID
-  const selectElement = document.getElementById('objectSelect');
-  if (selectElement) {
-    selectElement.value = presetValue;
-  }
-  loadObject(CATALOG[Number(presetValue)]);
-} else {
-	// avvio con il primo oggetto del catalogo
-	loadObject(CATALOG[0]);
+/* Lettura oggetto da querystring — due modalità:
+   ?id=<id catalogo>   es. ?id=M42  (case-insensitive, cerca in CATALOG[].id)
+   ?pos=<indice>       es. ?pos=3   (indice numerico nell'array, come prima)
+   Se nessuno dei due è presente, non valido, o non trovato: primo oggetto
+   del catalogo, con un avviso in console per facilitare il debug. */
+function findIndexById(catalog, targetId) {
+  const normalized = targetId.toLowerCase();
+  return catalog.findIndex(item => item.id.toLowerCase() === normalized);
 }
+ 
+const urlParams = new URLSearchParams(window.location.search);
+let startIndex = null;
+ 
+const idParam = urlParams.get('id');
+if (idParam !== null) {
+  const found = findIndexById(CATALOG, idParam);
+  if (found !== -1) {
+    startIndex = found;
+  } else {
+    console.warn(`Nessun oggetto con id "${idParam}" nel catalogo — avvio con il primo oggetto.`);
+  }
+} else {
+  const objParam = urlParams.get('pos');
+  if (objParam !== null) {
+    const n = Number(objParam);
+    if (Number.isInteger(n) && n >= 0 && n < CATALOG.length) {
+      startIndex = n;
+    } else {
+      console.warn(`Indice "${objParam}" non valido (0-${CATALOG.length - 1} atteso) — avvio con il primo oggetto.`);
+    }
+  }
+}
+ 
+if (startIndex === null) startIndex = 0;
+ 
+const selectElement = document.getElementById('objectSelect');
+if (selectElement) selectElement.value = startIndex;
+loadObject(CATALOG[startIndex]);
