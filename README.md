@@ -12,3 +12,5 @@ The Galactic structure is a simplified visual model based on astronomical litera
 
 **Live application:** https://loretru.github.io/Galactomimesis/
 
+Coordinate conversion utility page (helps to create a querystring for custom objects): https://loretru.github.io/Galactomimesis/coordconv.html
+
