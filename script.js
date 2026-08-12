@@ -3,7 +3,6 @@
 	Source and license at: https://github.com/LoreTru/Galactomimesis
 */
 
-
 import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js";
 
 /* =============================================================================
@@ -756,7 +755,30 @@ CATALOG.forEach((entry, i) => {
   opt.textContent = entry.name;
   select.appendChild(opt);
 });
-select.addEventListener('change', () => loadObject(CATALOG[select.value]));
+
+// oggetto personalizzato passato via querystring (ra/dec/dist/name) — non fa
+// parte del catalogo, vive solo per la sessione corrente della pagina
+let customEntry = null;
+
+function showCustomOption(name) {
+  let opt = document.getElementById('customOption');
+  if (!opt) {
+    opt = document.createElement('option');
+    opt.id = 'customOption';
+    opt.value = 'custom';
+    select.insertBefore(opt, select.firstChild);
+  }
+  opt.textContent = name;
+  select.value = 'custom';
+}
+
+select.addEventListener('change', () => {
+  if (select.value === 'custom' && customEntry) {
+    loadObject(customEntry);
+  } else {
+    loadObject(CATALOG[select.value]);
+  }
+});
 
 const pivotSelect = document.getElementById('pivotSelect');
 pivotSelect.addEventListener('change', () => {
@@ -799,41 +821,94 @@ function animate() {
 }
 animate();
 
-/* Lettura oggetto da querystring — due modalità:
-   ?id=<id catalogo>   es. ?id=M42  (case-insensitive, cerca in CATALOG[].id)
-   ?pos=<indice>       es. ?pos=3   (indice numerico nell'array, come prima)
-   Se nessuno dei due è presente, non valido, o non trovato: primo oggetto
-   del catalogo, con un avviso in console per facilitare il debug. */
+/* Lettura oggetto da querystring — tre modalità, in ordine di priorità:
+
+   1) ?ra=<gradi>&dec=<gradi>&dist=<al>&name=<testo>   oggetto personalizzato,
+      non fa parte del catalogo. Servono TUTTI E TRE ra/dec/dist (name è
+      opzionale). Se anche uno solo manca o non è valido, si scende al punto
+      successivo — non è un errore bloccante, solo "non intercettato".
+      URLSearchParams decodifica già %20/+ negli spazi di 'name' da solo,
+      nessuna gestione manuale necessaria.
+   2) ?id=<id catalogo>   es. ?id=M42  (case-insensitive, cerca in CATALOG[].id)
+   3) ?pos=<indice>       es. ?pos=3   (indice numerico nell'array, come prima)
+
+   Se nessuna delle tre si applica: primo oggetto del catalogo, con un
+   avviso in console per facilitare il debug. */
 function findIndexById(catalog, targetId) {
   const normalized = targetId.toLowerCase();
   return catalog.findIndex(item => item.id.toLowerCase() === normalized);
 }
- 
-const urlParams = new URLSearchParams(window.location.search);
-let startIndex = null;
- 
-const idParam = urlParams.get('id');
-if (idParam !== null) {
-  const found = findIndexById(CATALOG, idParam);
-  if (found !== -1) {
-    startIndex = found;
-  } else {
-    console.warn(`Nessun oggetto con id "${idParam}" nel catalogo — avvio con il primo oggetto.`);
+
+function parseCustomObjectFromQuery(urlParams) {
+  const raStr = urlParams.get('ra');
+  const decStr = urlParams.get('dec');
+  const distStr = urlParams.get('dist');
+  if (raStr === null || decStr === null || distStr === null) return null; // non tutti e tre presenti, ok, non è un errore
+
+  const ra = Number(raStr), dec = Number(decStr), dist = Number(distStr);
+  if (!Number.isFinite(ra)) {
+    console.warn(`ra="${raStr}" non è un numero valido — parametri custom ignorati.`);
+    return null;
   }
+  if (!Number.isFinite(dec) || dec < -90 || dec > 90) {
+    console.warn(`dec="${decStr}" deve essere un numero tra -90 e 90 — parametri custom ignorati.`);
+    return null;
+  }
+  if (!Number.isFinite(dist) || dist <= 0) {
+    console.warn(`dist="${distStr}" deve essere un numero positivo — parametri custom ignorati.`);
+    return null;
+  }
+
+  const rawName = urlParams.get('name');
+  const name = (rawName !== null && rawName.trim() !== '')
+    ? rawName
+    : `Oggetto personalizzato (RA ${ra}°, Dec ${dec}°)`;
+
+  return {
+    id: 'custom',
+    name,
+    type: 'Oggetto personalizzato (da querystring)',
+    ra_deg: ra,
+    dec_deg: dec,
+    distance_ly: dist,
+    distance_unc_ly: null,
+    source: 'Coordinate fornite manualmente via querystring (ra, dec, dist) — non fanno parte del catalogo, non verificate da questa applicazione.'
+  };
+}
+
+const urlParams = new URLSearchParams(window.location.search);
+const parsedCustom = parseCustomObjectFromQuery(urlParams);
+
+if (parsedCustom) {
+  customEntry = parsedCustom;
+  showCustomOption(parsedCustom.name);
+  loadObject(customEntry);
 } else {
-  const objParam = urlParams.get('pos');
-  if (objParam !== null) {
-    const n = Number(objParam);
-    if (Number.isInteger(n) && n >= 0 && n < CATALOG.length) {
-      startIndex = n;
+  let startIndex = null;
+
+  const idParam = urlParams.get('id');
+  if (idParam !== null) {
+    const found = findIndexById(CATALOG, idParam);
+    if (found !== -1) {
+      startIndex = found;
     } else {
-      console.warn(`Indice "${objParam}" non valido (0-${CATALOG.length - 1} atteso) — avvio con il primo oggetto.`);
+      console.warn(`Nessun oggetto con id "${idParam}" nel catalogo — avvio con il primo oggetto.`);
+    }
+  } else {
+    const posParam = urlParams.get('pos');
+    if (posParam !== null) {
+      const n = Number(posParam);
+      if (Number.isInteger(n) && n >= 0 && n < CATALOG.length) {
+        startIndex = n;
+      } else {
+        console.warn(`Indice "${posParam}" non valido (0-${CATALOG.length - 1} atteso) — avvio con il primo oggetto.`);
+      }
     }
   }
+
+  if (startIndex === null) startIndex = 0;
+
+  const selectElement = document.getElementById('objectSelect');
+  if (selectElement) selectElement.value = startIndex;
+  loadObject(CATALOG[startIndex]);
 }
- 
-if (startIndex === null) startIndex = 0;
- 
-const selectElement = document.getElementById('objectSelect');
-if (selectElement) selectElement.value = startIndex;
-loadObject(CATALOG[startIndex]);
