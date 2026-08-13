@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convertitore coordinate · Galactomimesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e1a;
+    --panel:#121729;
+    --panel-border:#242c47;
+    --text:#e9e6da;
+    --text-dim:#8891ad;
+    --accent:#e3a548;
+    --accent-dim:rgba(227,165,72,0.14);
+    --ok:#6fcf97;
+    --err:#e2685a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1px 1px at 20% 30%, rgba(233,230,218,0.5) 50%, transparent 51%),
+      radial-gradient(1px 1px at 65% 15%, rgba(233,230,218,0.35) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 80% 60%, rgba(233,230,218,0.4) 50%, transparent 51%),
+      radial-gradient(1px 1px at 40% 80%, rgba(233,230,218,0.3) 50%, transparent 51%),
+      radial-gradient(1px 1px at 90% 85%, rgba(233,230,218,0.3) 50%, transparent 51%),
+      radial-gradient(1px 1px at 10% 65%, rgba(233,230,218,0.25) 50%, transparent 51%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height:100vh;
+    padding:32px 16px 64px;
+  }
+  .page{max-width:720px;margin:0 auto;}
+  header{margin-bottom:32px;}
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--accent);
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:clamp(26px,5vw,34px);
+    font-weight:700;
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .lede{
+    color:var(--text-dim);
+    font-size:14.5px;
+    line-height:1.6;
+    max-width:56ch;
+    margin:0;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:22px;
+  }
+  @media (max-width:600px){ .grid{grid-template-columns:1fr;} }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .card h2{
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--text-dim);
+    margin:0 0 12px;
+  }
+  .format-toggle{
+    display:flex;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .format-toggle button{
+    flex:1;
+    background:transparent;
+    border:1px solid var(--panel-border);
+    color:var(--text-dim);
+    border-radius:6px;
+    padding:6px 8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    cursor:pointer;
+    transition:background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .format-toggle button.active{
+    background:var(--accent-dim);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+  .format-toggle button:focus-visible,
+  input:focus-visible, select:focus-visible, #copy-btn:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  input[type="text"]{
+    width:100%;
+    background:#0d1120;
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    border-radius:6px;
+    padding:9px 10px;
+  }
+  input[type="text"].invalid{ border-color:var(--err); }
+  .hint{
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:6px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .dist-row{ display:flex; gap:8px; }
+  .dist-row input{ flex:1; }
+  select{
+    background:#0d1120;
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    border-radius:6px;
+    padding:9px 6px;
+  }
+  .readout{
+    background:linear-gradient(180deg, var(--panel), #0d1120);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:18px;
+    display:grid;
+    gap:8px;
+  }
+  .readout-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:1px dashed var(--panel-border);
+    padding-bottom:8px;
+  }
+  .readout-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .readout-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    color:var(--text-dim);
+  }
+  .readout-value{
+    font-family:'JetBrains Mono', monospace;
+    font-size:18px;
+    font-weight:500;
+    color:var(--accent);
+  }
+  .readout-value.err{ color:var(--err); font-size:13px; }
+  .output h2{
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--text-dim);
+    margin:0 0 10px;
+  }
+  .base-url{
+    width:100%;
+    margin-bottom:10px;
+    font-size:12px;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    padding:7px 9px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .url-box{
+    display:flex;
+    gap:8px;
+    align-items:stretch;
+  }
+  .url-box code{
+    flex:1;
+    display:block;
+    background:#0d1120;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    padding:10px 12px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ok);
+    word-break:break-all;
+  }
+  #copy-btn{
+    background:var(--accent);
+    color:#0b0e1a;
+    border:none;
+    border-radius:6px;
+    padding:0 16px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  #copy-btn:active{ transform:translateY(1px); }
+  .note{
+    font-size:11.5px;
+    color:var(--text-dim);
+    margin-top:12px;
+    line-height:1.5;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">GALACTOMIMESIS · UTILITY</div>
+    <h1>Convertitore di coordinate</h1>
+    <p class="lede">Inserisci RA, DEC e distanza nel formato che hai a disposizione: la pagina converte tutto in gradi decimali e anni luce — lo stesso standard dei campi <code>ra_deg</code> / <code>dec_deg</code> / <code>distance_ly</code> del catalogo — e genera una querystring pronta da incollare.</p>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Ascensione retta (RA)</h2>
+      <div class="format-toggle" data-group="ra">
+        <button type="button" data-mode="deg" class="active">Gradi decimali</button>
+        <button type="button" data-mode="hms">h m s</button>
+      </div>
+      <input type="text" id="ra-input" placeholder="es. 83.82" autocomplete="off">
+      <div class="hint" id="ra-hint">Intervallo valido: 0° – 360°</div>
+    </section>
+
+    <section class="card">
+      <h2>Declinazione (DEC)</h2>
+      <div class="format-toggle" data-group="dec">
+        <button type="button" data-mode="deg" class="active">Gradi decimali</button>
+        <button type="button" data-mode="dms">° ′ ″</button>
+      </div>
+      <input type="text" id="dec-input" placeholder="es. -5.3875" autocomplete="off">
+      <div class="hint" id="dec-hint">Intervallo valido: -90° – +90°</div>
+    </section>
+
+    <section class="card">
+      <h2>Distanza</h2>
+      <div class="dist-row">
+        <input type="text" id="dist-input" placeholder="es. 1267" autocomplete="off">
+        <select id="dist-unit">
+          <option value="ly">anni luce</option>
+          <option value="pc">parsec</option>
+          <option value="kpc">kiloparsec</option>
+        </select>
+      </div>
+      <div class="hint">Verrà convertita in anni luce nell'output</div>
+    </section>
+
+    <section class="card">
+      <h2>Nome oggetto</h2>
+      <input type="text" id="name-input" placeholder="es. M42" autocomplete="off">
+      <div class="hint">Usato per il parametro <code>name</code></div>
+    </section>
+  </main>
+
+  <section class="readout" id="readout">
+    <div class="readout-row">
+      <span class="readout-label">RA (deg)</span>
+      <span class="readout-value" id="out-ra">—</span>
+    </div>
+    <div class="readout-row">
+      <span class="readout-label">DEC (deg)</span>
+      <span class="readout-value" id="out-dec">—</span>
+    </div>
+    <div class="readout-row">
+      <span class="readout-label">DIST (ly)</span>
+      <span class="readout-value" id="out-dist">—</span>
+    </div>
+  </section>
+
+  <section class="output">
+    <h2>Querystring generata</h2>
+    <input type="text" class="base-url" id="base-url" value="https://loretru.github.io/Galactomimesis/">
+    <div class="url-box">
+      <code id="url-output">—</code>
+      <button type="button" id="copy-btn">Copia</button>
+    </div>
+    <p class="note">Nota: i parametri <code>ra</code> / <code>dec</code> / <code>dist</code> / <code>name</code> qui generati sono una proposta di convenzione per un'eventuale ricerca "custom" via querystring, non è verificato che il widget pubblicato li supporti già — controlla le release notes del progetto prima di affidarti a questo link.</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const raInput = document.getElementById('ra-input');
+  const decInput = document.getElementById('dec-input');
+  const distInput = document.getElementById('dist-input');
+  const distUnit = document.getElementById('dist-unit');
+  const nameInput = document.getElementById('name-input');
+  const baseUrlInput = document.getElementById('base-url');
+
+  const raHint = document.getElementById('ra-hint');
+  const decHint = document.getElementById('dec-hint');
+
+  const outRa = document.getElementById('out-ra');
+  const outDec = document.getElementById('out-dec');
+  const outDist = document.getElementById('out-dist');
+  const urlOutput = document.getElementById('url-output');
+  const copyBtn = document.getElementById('copy-btn');
+
+  let raMode = 'deg';
+  let decMode = 'deg';
+
+  function setupToggle(groupSelector, onChange){
+    const group = document.querySelector(`.format-toggle[data-group="${groupSelector}"]`);
+    const buttons = group.querySelectorAll('button');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        onChange(btn.dataset.mode);
+        update();
+      });
+    });
+  }
+
+  setupToggle('ra', mode => {
+    raMode = mode;
+    raInput.placeholder = mode === 'deg' ? 'es. 83.82' : 'es. 05h 35m 16.80s';
+    raHint.textContent = mode === 'deg'
+      ? 'Intervallo valido: 0° – 360°'
+      : 'Formato: 05h 35m 16.80s (accetta anche 05:35:16.8 o 05 35 16.8)';
+  });
+
+  setupToggle('dec', mode => {
+    decMode = mode;
+    decInput.placeholder = mode === 'deg' ? 'es. -5.3875' : "es. -05° 23' 15.0\"";
+    decHint.textContent = mode === 'deg'
+      ? 'Intervallo valido: -90° – +90°'
+      : 'Formato: -05° 23\' 15.0" (accetta anche -05:23:15 o -05 23 15)';
+  });
+
+  // Estrae fino a 3 numeri (d/h, m, s) da una stringa sessagesimale, gestendo il segno a parte
+  function parseSexagesimal(str){
+    str = str.trim();
+    if (!str) return null;
+    let sign = 1;
+    if (str[0] === '-'){ sign = -1; str = str.slice(1); }
+    else if (str[0] === '+'){ str = str.slice(1); }
+    const nums = str.match(/[\d.]+/g);
+    if (!nums || nums.length === 0) return null;
+    const d = parseFloat(nums[0]) || 0;
+    const m = nums[1] !== undefined ? parseFloat(nums[1]) : 0;
+    const s = nums[2] !== undefined ? parseFloat(nums[2]) : 0;
+    if (isNaN(d) || isNaN(m) || isNaN(s)) return null;
+    return sign * (d + m / 60 + s / 3600);
+  }
+
+  function parseRA(){
+    const raw = raInput.value.trim();
+    if (!raw) return null;
+    let deg;
+    if (raMode === 'deg'){
+      deg = parseFloat(raw);
+    } else {
+      deg = parseSexagesimal(raw);
+      if (deg !== null) deg = deg * 15; // ore -> gradi
+    }
+    if (deg === null || isNaN(deg)) return null;
+    if (deg < 0 || deg > 360) return null;
+    return deg;
+  }
+
+  function parseDEC(){
+    const raw = decInput.value.trim();
+    if (!raw) return null;
+    let deg;
+    if (decMode === 'deg'){
+      deg = parseFloat(raw);
+    } else {
+      deg = parseSexagesimal(raw);
+    }
+    if (deg === null || isNaN(deg)) return null;
+    if (deg < -90 || deg > 90) return null;
+    return deg;
+  }
+
+  function parseDist(){
+    const raw = distInput.value.trim();
+    if (!raw) return null;
+    const val = parseFloat(raw);
+    if (isNaN(val) || val <= 0) return null;
+    const unit = distUnit.value;
+    if (unit === 'ly') return val;
+    if (unit === 'pc') return val * 3.26156;
+    if (unit === 'kpc') return val * 1000 * 3.26156;
+    return null;
+  }
+
+  function setValidity(input, valid){
+    input.classList.toggle('invalid', !valid);
+  }
+
+  function update(){
+    const raRaw = raInput.value.trim();
+    const decRaw = decInput.value.trim();
+    const distRaw = distInput.value.trim();
+
+    const ra = parseRA();
+    const dec = parseDEC();
+    const dist = parseDist();
+
+    setValidity(raInput, raRaw === '' || ra !== null);
+    setValidity(decInput, decRaw === '' || dec !== null);
+    setValidity(distInput, distRaw === '' || dist !== null);
+
+    outRa.textContent = ra !== null ? ra.toFixed(4) + '°' : (raRaw ? 'formato non valido' : '—');
+    outRa.classList.toggle('err', raRaw !== '' && ra === null);
+
+    outDec.textContent = dec !== null ? (dec >= 0 ? '+' : '') + dec.toFixed(4) + '°' : (decRaw ? 'formato non valido' : '—');
+    outDec.classList.toggle('err', decRaw !== '' && dec === null);
+
+    outDist.textContent = dist !== null ? Math.round(dist * 100) / 100 + ' ly' : (distRaw ? 'formato non valido' : '—');
+    outDist.classList.toggle('err', distRaw !== '' && dist === null);
+
+    const name = nameInput.value.trim();
+    const base = baseUrlInput.value.trim() || 'https://loretru.github.io/Galactomimesis/';
+
+    if (ra !== null && dec !== null && dist !== null){
+      const params = new URLSearchParams();
+      params.set('ra', ra.toFixed(4));
+      params.set('dec', dec.toFixed(4));
+      params.set('dist', (Math.round(dist * 100) / 100).toString());
+      if (name) params.set('name', name);
+      const separator = base.includes('?') ? '&' : '?';
+      urlOutput.textContent = base + separator + params.toString();
+    } else {
+      urlOutput.textContent = '— compila RA, DEC e distanza in formato valido —';
+    }
+  }
+
+  copyBtn.addEventListener('click', () => {
+    const text = urlOutput.textContent;
+    if (!text || text.startsWith('—')) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const original = copyBtn.textContent;
+      copyBtn.textContent = 'Copiato ✓';
+      setTimeout(() => { copyBtn.textContent = original; }, 1400);
+    });
+  });
+
+  [raInput, decInput, distInput, distUnit, nameInput, baseUrlInput].forEach(el => {
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
+  });
+
+  update();
+})();
+</script>
+
+</body>
+</html>

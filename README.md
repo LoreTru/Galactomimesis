@@ -12,3 +12,17 @@ The Galactic structure is a simplified visual model based on astronomical litera
 
 **Live application:** https://loretru.github.io/Galactomimesis/
 
+Coordinate conversion utility page (helps to create a querystring for custom objects): https://loretru.github.io/Galactomimesis/coordconv.html
+
+# Usage
+
+1) Simply go to Galactomimesis and choose an object.
+
+2) Go directly to an object using the "id" parameter: https://loretru.github.io/Galactomimesis?id=m42. 
+Look at the catalog.json file to find objects.
+
+3) Create your custom object using the https://loretru.github.io/Galactomimesis/coordconv.html page. A querystring with the following parameters will be created:
+- "ra" = right ascension (decimal degrees)
+- "dec" = declination (decimal degrees)
+- "dist" = distance (ligth years)
+- "name" = a custom name (no spaces, escaped string).
