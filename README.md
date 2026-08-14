@@ -10,18 +10,19 @@ The application is entirely client-side and requires no installation or backend.
 
 The Galactic structure is a simplified visual model based on astronomical literature. It is intended for spatial visualization and didactic use, not as a precise reconstruction of the Milky Way.
 
-**Live application:** https://loretru.github.io/Galactomimesis/
-
-Coordinate conversion utility page (helps to create a querystring for custom objects): https://loretru.github.io/Galactomimesis/coordconv.html
+** Developed as part of Sicut Hipparchus Project **
+[IT] https://sicuthipparchus.wordpress.com/ 
 
 # Usage
 
-1) Simply go to Galactomimesis and choose an object.
+**Live application:** https://loretru.github.io/Galactomimesis/
 
-2) Go directly to an object using the "id" parameter: https://loretru.github.io/Galactomimesis?id=m42. 
+1) Simply go to Galactomimesis and choose an object. 
+
+3) Go directly to an object using the "id" parameter: https://loretru.github.io/Galactomimesis?id=m42. 
 Look at the catalog.json file to find objects.
 
-3) Create your custom object using the https://loretru.github.io/Galactomimesis/coordconv.html page. A querystring with the following parameters will be created:
+4) Create your custom object using the https://loretru.github.io/Galactomimesis/coordconv.html utility page. A querystring with the following parameters will be created:
 - "ra" = right ascension (decimal degrees)
 - "dec" = declination (decimal degrees)
 - "dist" = distance (ligth years)
