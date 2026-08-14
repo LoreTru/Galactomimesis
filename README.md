@@ -10,8 +10,8 @@ The application is entirely client-side and requires no installation or backend.
 
 The Galactic structure is a simplified visual model based on astronomical literature. It is intended for spatial visualization and didactic use, not as a precise reconstruction of the Milky Way.
 
-** Developed as part of Sicut Hipparchus Project **
-[IT] https://sicuthipparchus.wordpress.com/ 
+**Developed as part of Sicut Hipparchus Project** 
+[ITA] https://sicuthipparchus.wordpress.com/ 
 
 # Usage
 
