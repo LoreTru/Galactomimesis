@@ -1,16 +1,18 @@
 /*
-	GALACTOMIMESIS V. 0.3
+	GALACTOMIMESIS
 	Source and license at: https://github.com/LoreTru/Galactomimesis
+	Numero di versione: vedi version.js
 */
 import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js";
 
+import { GM_VER } from './version.js';
 import { raDecDistToCartesian, computeEarthPos } from './coords.js';
 import { loadCatalog, parseCustomObjectFromQuery, resolveStartIndex } from './catalog.js';
 import { buildGalaxy } from './galaxy.js';
 import { buildGalacticGrid, applyGridScale as applyGridScaleTo, updateGridLabels } from './grid.js';
 import { createOrbitControls } from './controls.js';
 import { createEarthMarker, createObjectMarker, updateObjectMarker, updateMarkerLine, computeFraming } from './markers.js';
-import { populateObjectSelect, showCustomOption, updateInfoPanel as renderInfoPanel, setupInfoPanelCollapse, setupResizeHandler } from './ui.js';
+import { populateObjectSelect, showCustomOption, updateInfoPanel as renderInfoPanel, setupInfoPanelCollapse, setupResizeHandler, renderDisclaimer } from './ui.js';
 import { projectLabelToScreen } from './label-utils.js';
 
 /* =============================================================================
@@ -187,6 +189,7 @@ gridScaleSelect.addEventListener('change', () => {
    ============================================================================= */
 setupInfoPanelCollapse(document.getElementById('info'), document.getElementById('infoToggle'));
 setupResizeHandler(camera, renderer, container);
+renderDisclaimer(document.getElementById('disclaimer'), GM_VER);
 
 /* =============================================================================
    RENDER LOOP

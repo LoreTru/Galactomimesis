@@ -70,6 +70,18 @@ export function setupInfoPanelCollapse(infoEl, infoToggleEl) {
   });
 }
 
+/** Popola il disclaimer in basso a destra. Riceve la versione come
+    parametro (non importa version.js direttamente): questo modulo resta
+    generico, senza conoscere costanti specifiche dell'applicazione. */
+export function renderDisclaimer(el, version) {
+  el.innerHTML = `
+    GALACTOMIMESIS - © 2026, Lorenzo Trumino<br>
+    Version: ${version}<br>
+    Part of <a href="https://sicuthipparchus.wordpress.com/" target="_blank" rel="noopener">Sicut Hipparchus Project</a><br>
+    Go to <a href="./coordconv.html">Coordinate Converter Utility</a>
+  `;
+}
+
 export function setupResizeHandler(camera, renderer, container) {
   function onResize() {
     const w = container.clientWidth, h = container.clientHeight;
