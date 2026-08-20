@@ -6,21 +6,20 @@
 import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.185.1/three.module.min.js";
 
 import { GM_VER } from './version.js';
-import { raDecDistToCartesian, computeEarthPos } from './coords.js';
+import { raDecDistToCartesian, computeEarthPos, R_SUN_LY } from './coords.js';
 import { loadCatalog, parseCustomObjectFromQuery, resolveStartIndex } from './catalog.js';
 import { buildGalaxy } from './galaxy.js';
 import { buildGalacticGrid, applyGridScale as applyGridScaleTo, updateGridLabels } from './grid.js';
 import { createOrbitControls } from './controls.js';
-import { createEarthMarker, createObjectMarker, updateObjectMarker, updateMarkerLine, computeFraming, clampMarkerToMaxPixels } from './markers.js';
-import { populateObjectSelect, showCustomOption, updateInfoPanel as renderInfoPanel, setupInfoPanelCollapse, setupResizeHandler, renderDisclaimer } from './ui.js';
+import { createEarthMarker, createObjectMarker, updateObjectMarker, updateMarkerLine, removeObjectMarker, computeFraming, clampMarkerToMaxPixels } from './markers.js';
+import {
+  buildObjectList, filterObjectList, setObjectItemDisplayed, uncheckAllObjectItems,
+  updateInfoPanel as renderInfoPanel, setupInfoPanelCollapse, setupResizeHandler, renderDisclaimer
+} from './ui.js';
 import { projectLabelToScreen } from './label-utils.js';
 
 /* =============================================================================
    CATALOGO
-   Caricato da file esterno (catalog.json). Top-level await: essendo un
-   modulo ES, l'esecuzione si sospende qui finché il fetch non è completo.
-   IMPORTANTE: estendere catalog.json solo con dati verificati — un valore
-   sbagliato lì produce una posizione 3D sbagliata, silenziosamente.
    ============================================================================= */
 const CATALOG = await loadCatalog('./catalog.json');
 
@@ -34,26 +33,16 @@ container.insertBefore(renderer.domElement, container.firstChild);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, 1, 0.001, 1e9);
-// Il sistema di coordinate sferiche dei controlli orbit usa l'asse Z come
-// polo (phi misurato da Z). Il vettore "up" di default di Three.js è invece
-// l'asse Y: senza questa riga, camera.lookAt() userebbe Y come riferimento
-// verticale, disallineato rispetto al polo reale della rotazione — è
-// esattamente questo disallineamento a causare l'effetto di assi di
-// trascinamento apparentemente scambiati.
-camera.up.set(0, 0, 1);
+camera.up.set(0, 0, 1); // vedi coords.js/riepilogo progetto: allineato al polo dei controlli orbit
 
 /* =============================================================================
-   STRUTTURA GALATTICA (bracci + barra) e POSIZIONE DELLA TERRA
-
-   L'origine della scena (0,0,0) è il Centro Galattico, non la Terra. Vedi
-   coords.js per il dettaglio della trasformazione e il riepilogo di
-   progetto per la storia di questa scelta.
+   STRUTTURA GALATTICA e POSIZIONE DELLA TERRA
    ============================================================================= */
 const { arms } = buildGalaxy(scene);
 const EARTH_POS = computeEarthPos();
 
 /* =============================================================================
-   ETICHETTE DEI BRACCI (overlay DOM, proiezione manuale — vedi label-utils.js)
+   ETICHETTE DEI BRACCI
    ============================================================================= */
 const armLabelsContainer = document.getElementById('armLabels');
 const armLabelEls = arms.map(arm => {
@@ -69,15 +58,15 @@ function updateArmLabels() {
 }
 
 /* =============================================================================
-   GRIGLIA DI COORDINATE GALATTICHE (centrata sulla Terra, non sul perno)
+   GRIGLIA DI COORDINATE GALATTICHE
    ============================================================================= */
 const { galacticGrid, gridLabelEls } = buildGalacticGrid(scene, EARTH_POS, armLabelsContainer);
 
 /* =============================================================================
-   MARCATORI Terra/oggetto e linea Terra-oggetto
+   MARCATORE TERRA (fisso) + materiale della linea (condiviso da tutti gli
+   oggetti: resta uniforme — vedi nota colori sotto)
    ============================================================================= */
 const earthMarker = createEarthMarker(scene, EARTH_POS);
-const targetMarker = createObjectMarker(scene); // rosso intenso di default
 const lineMat = new THREE.LineBasicMaterial({ color: 0xeee8aa }); // giallo paglierino
 
 /* =============================================================================
@@ -86,53 +75,119 @@ const lineMat = new THREE.LineBasicMaterial({ color: 0xeee8aa }); // giallo pagl
 const controls = createOrbitControls(camera, renderer.domElement);
 
 /* =============================================================================
-   STATO APPLICATIVO
+   STATO APPLICATIVO — MULTI-OGGETTO
+
+   displayedMarkers: registro dei marcatori attualmente in scena, chiave
+   entry.id. currentEntries: l'array corrispondente, usato per ricalcolare
+   inquadratura/griglia quando cambia solo il perno o la scala, senza dover
+   ricreare i marcatori.
    ============================================================================= */
-let currentEntry = null;
+let displayedMarkers = new Map();  // entry.id -> marker
+let currentEntries = [];
+let nextColorIndex = 0;
 let gridScaleFactor = 1;
 let pivotMode = 'earth'; // 'earth' oppure 'gc'
-let customEntry = null;  // oggetto personalizzato via querystring, se presente
 
-// diametro massimo in pixel della mesh dei marcatori Terra/oggetto,
-// qualunque sia lo zoom — vedi clampMarkerToMaxPixels() in markers.js
-const MAX_MARKER_PIXELS = 6;
+const MAX_MARKER_PIXELS = 6; // vedi clampMarkerToMaxPixels() in markers.js
+const FALLBACK_VIEW_LY = 2000;      // inquadratura di default quando è visibile solo la Terra col perno su di essa (altrimenti raggio zero)
+const DEFAULT_GRID_DISTANCE_LY = R_SUN_LY; // scala di default della griglia quando nessun oggetto è visualizzato
 
-function applyGridScale() {
-  if (!currentEntry) return;
-  applyGridScaleTo(galacticGrid, currentEntry.distance_ly, gridScaleFactor);
+/* Colori distintivi per marcatore, assegnati in ordine di comparsa (non
+   scelta esplicitamente richiesta, ma necessaria per distinguere più
+   oggetti a colpo d'occhio). Evitano l'azzurro della Terra (#1ec8ff) e il
+   giallo paglierino della linea (#eee8aa). La linea Terra-oggetto resta
+   invece uniforme per tutti — è un indicatore di "collegamento alla Terra",
+   non di identità dell'oggetto. */
+const COLOR_PALETTE = [
+  0xff2b2b, 0xffa62b, 0xd42bff, 0x2bff8f, 0x2bffe6,
+  0x2bd4ff, 0xff2bb0, 0x8fff2b, 0xa62bff, 0xff6f2b
+];
+
+function getMaxDisplayedDistance(entries) {
+  return entries.reduce((max, e) => Math.max(max, e.distance_ly), 0);
 }
 
 /* =============================================================================
-   CARICAMENTO DI UN OGGETTO NELLA SCENA
-
-   Il perno di rotazione (controls.target) può essere la Terra o il Centro
-   Galattico (menu #pivotSelect) — vedi computeFraming() in markers.js per la
-   formula generalizzata che copre entrambi i casi con un'unica logica.
+   UI: pannello oggetti (filtro + lista a checkbox)
    ============================================================================= */
-function loadObject(entry) {
-  currentEntry = entry;
-  // cambiando oggetto, il fattore di scala della griglia torna a 1×
-  gridScaleFactor = 1;
-  const gridScaleSelectEl = document.getElementById('gridScaleSelect');
-  if (gridScaleSelectEl) gridScaleSelectEl.value = '1';
+const objectListEl = document.getElementById('objectList');
+const objectItems = buildObjectList(objectListEl, CATALOG);
+const objectItemsById = new Map(objectItems.map(item => [item.entry.id, item]));
 
-  // vettore Terra->oggetto (dipende solo da RA/Dec/distanza, non
-  // dall'origine della scena), poi sommato a EARTH_POS per la posizione
-  // assoluta nel sistema centrato sul Centro Galattico
-  const posFromEarth = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
-  const pos = posFromEarth.clone().add(EARTH_POS);
+/* =============================================================================
+   VISUALIZZAZIONE — punto centrale: sincronizza scena, camera, griglia e
+   pannello info con l'insieme di oggetti passato. Usata sia da Applica sia
+   da Reset sia dal cambio di perno (che deve solo ricalcolare l'inquadratura
+   sugli oggetti già mostrati, senza ricrearli).
+   ============================================================================= */
+function setDisplayedEntries(entries) {
+  currentEntries = entries;
+  const newIds = new Set(entries.map(e => e.id));
 
-  // dimensione marcatori scalata sulla distanza, SOLO per visibilità — non è
-  // la dimensione fisica reale dell'oggetto né della Terra
-  const markerScale = entry.distance_ly * 0.01;
-  earthMarker.baseScale = markerScale;
-  earthMarker.mesh.scale.setScalar(Math.max(markerScale, 0.001));
-  updateObjectMarker(targetMarker, pos, markerScale);
-  updateMarkerLine(scene, targetMarker, EARTH_POS, pos, lineMat);
+  // rimuovi marcatori di oggetti non più nell'insieme
+  for (const [id, marker] of displayedMarkers) {
+    if (!newIds.has(id)) {
+      removeObjectMarker(scene, marker);
+      if (marker.labelEl) marker.labelEl.remove();
+      displayedMarkers.delete(id);
+      const item = objectItemsById.get(id);
+      if (item) setObjectItemDisplayed(item, null);
+    }
+  }
 
+  const allPoints = [EARTH_POS];
+  entries.forEach(entry => {
+    let marker = displayedMarkers.get(entry.id);
+    if (!marker) {
+      const color = COLOR_PALETTE[nextColorIndex % COLOR_PALETTE.length];
+      nextColorIndex++;
+      marker = createObjectMarker(scene, color);
+      marker.color = color;
+
+      // etichetta con l'id, colorata come il marcatore — proiettata a ogni
+      // frame in animate() usando la posizione corrente della mesh
+      const labelEl = document.createElement('div');
+      labelEl.className = 'objMarkerLabel';
+      labelEl.textContent = entry.id;
+      labelEl.style.color = '#' + color.toString(16).padStart(6, '0');
+      armLabelsContainer.appendChild(labelEl);
+      marker.labelEl = labelEl;
+
+      displayedMarkers.set(entry.id, marker);
+    }
+
+    const posFromEarth = raDecDistToCartesian(entry.ra_deg, entry.dec_deg, entry.distance_ly);
+    const pos = posFromEarth.clone().add(EARTH_POS);
+    const markerScale = entry.distance_ly * 0.01;
+    updateObjectMarker(marker, pos, markerScale);
+    updateMarkerLine(scene, marker, EARTH_POS, pos, lineMat);
+    allPoints.push(pos);
+
+    const item = objectItemsById.get(entry.id);
+    if (item) setObjectItemDisplayed(item, marker.color);
+  });
+
+  // dimensione marcatore Terra: coerente col più grande tra gli oggetti
+  // visualizzati (o un valore neutro se nessuno è selezionato)
+  const maxDist = getMaxDisplayedDistance(entries);
+  const earthMarkerScale = (maxDist > 0 ? maxDist : DEFAULT_GRID_DISTANCE_LY) * 0.01;
+  earthMarker.baseScale = earthMarkerScale;
+
+  // inquadratura camera: perno Terra o Centro Galattico, sfera-limite su
+  // TUTTI i punti visualizzati (generalizzazione di computeFraming, vedi
+  // markers.js). Caso degenere: perno=Terra e nessun oggetto -> Terra
+  // coincide col perno, raggio zero — aggiungo un punto virtuale (non
+  // visualizzato) per un'inquadratura di default sensata invece di una
+  // camera a distanza zero.
   const fovRad = THREE.MathUtils.degToRad(camera.fov);
   const pivotTarget = (pivotMode === 'gc') ? new THREE.Vector3(0, 0, 0) : EARTH_POS.clone();
-  const { fitDistance, theta, phi } = computeFraming([EARTH_POS, pos], pivotTarget, fovRad);
+
+  let framingPoints = allPoints;
+  if (allPoints.length === 1 && pivotTarget.distanceTo(EARTH_POS) < 1) {
+    framingPoints = [EARTH_POS, EARTH_POS.clone().add(new THREE.Vector3(FALLBACK_VIEW_LY, 0, FALLBACK_VIEW_LY * 0.3))];
+  }
+
+  const { fitDistance, theta, phi } = computeFraming(framingPoints, pivotTarget, fovRad);
 
   controls.target.copy(pivotTarget);
   controls.radius = fitDistance;
@@ -145,52 +200,60 @@ function loadObject(entry) {
   camera.updateProjectionMatrix();
   controls.update();
 
-  // griglia galattica: raggio pari alla distanza dell'oggetto selezionato,
-  // moltiplicata per il fattore scelto nel menu dedicato (default 1×) —
-  // resta ancorata alla Terra, non al perno
-  applyGridScale();
+  applyGridScaleTo(galacticGrid, maxDist > 0 ? maxDist : DEFAULT_GRID_DISTANCE_LY, gridScaleFactor);
 
-  const infoContentEl = document.getElementById('infoContent');
-  renderInfoPanel(infoContentEl, entry);
+  renderInfoPanel(document.getElementById('infoContent'), entries);
 }
 
 /* =============================================================================
-   UI: selettore catalogo, perno, scala griglia
+   APPLICA / RESET
    ============================================================================= */
-const select = document.getElementById('objectSelect');
-populateObjectSelect(select, CATALOG);
+function applySelection() {
+  gridScaleFactor = 1;
+  gridScaleSelect.value = '1';
+  const checked = objectItems.filter(item => item.checkboxEl.checked).map(item => item.entry);
+  setDisplayedEntries(checked);
+}
 
-select.addEventListener('change', () => {
-  if (select.value === 'custom' && customEntry) {
-    loadObject(customEntry);
-  } else {
-    loadObject(CATALOG[select.value]);
-  }
-});
+function resetSelection() {
+  uncheckAllObjectItems(objectItems);
+  gridScaleFactor = 1;
+  gridScaleSelect.value = '1';
+  setDisplayedEntries([]);
+}
 
+document.getElementById('applyBtn').addEventListener('click', applySelection);
+document.getElementById('resetBtn').addEventListener('click', resetSelection);
+
+const objectFilterEl = document.getElementById('objectFilter');
+objectFilterEl.addEventListener('input', () => filterObjectList(objectItems, objectFilterEl.value));
+
+/* =============================================================================
+   PERNO E SCALA GRIGLIA
+
+   Cambiare il perno o la scala NON tocca l'insieme di oggetti visualizzati
+   (currentEntries) — richiama solo il ricalcolo di inquadratura/griglia.
+   A differenza della versione a un solo oggetto, qui non serve più
+   salvare/ripristinare gridScaleFactor attorno al cambio di perno: quel
+   valore non viene più azzerato da setDisplayedEntries (lo azzerano solo
+   Applica e Reset, esplicitamente), quindi cambiare perno lo lascia
+   semplicemente invariato.
+   ============================================================================= */
 const pivotSelect = document.getElementById('pivotSelect');
 pivotSelect.addEventListener('change', () => {
   pivotMode = pivotSelect.value;
-  if (currentEntry) {
-    // loadObject resetta anche il fattore di scala della griglia (pensato
-    // per il cambio oggetto, non per il cambio perno) — lo salvo e lo
-    // ripristino per evitare l'effetto collaterale
-    const savedGridScale = gridScaleFactor;
-    loadObject(currentEntry);
-    gridScaleFactor = savedGridScale;
-    gridScaleSelect.value = String(savedGridScale);
-    applyGridScale();
-  }
+  setDisplayedEntries(currentEntries);
 });
 
 const gridScaleSelect = document.getElementById('gridScaleSelect');
 gridScaleSelect.addEventListener('change', () => {
   gridScaleFactor = parseFloat(gridScaleSelect.value);
-  applyGridScale();
+  const maxDist = getMaxDisplayedDistance(currentEntries);
+  applyGridScaleTo(galacticGrid, maxDist > 0 ? maxDist : DEFAULT_GRID_DISTANCE_LY, gridScaleFactor);
 });
 
 /* =============================================================================
-   PANNELLO INFO COLLASSABILE + RESIZE
+   PANNELLO INFO COLLASSABILE + RESIZE + DISCLAIMER
    ============================================================================= */
 setupInfoPanelCollapse(document.getElementById('info'), document.getElementById('infoToggle'));
 setupResizeHandler(camera, renderer, container);
@@ -203,7 +266,10 @@ function animate() {
   requestAnimationFrame(animate);
   camera.updateMatrixWorld();
   clampMarkerToMaxPixels(earthMarker, camera, container.clientHeight, MAX_MARKER_PIXELS);
-  clampMarkerToMaxPixels(targetMarker, camera, container.clientHeight, MAX_MARKER_PIXELS);
+  for (const marker of displayedMarkers.values()) {
+    clampMarkerToMaxPixels(marker, camera, container.clientHeight, MAX_MARKER_PIXELS);
+    projectLabelToScreen(marker.labelEl, marker.mesh.position, camera, container);
+  }
   updateArmLabels();
   updateGridLabels(gridLabelEls, galacticGrid, EARTH_POS, camera, container);
   renderer.render(scene, camera);
@@ -211,21 +277,26 @@ function animate() {
 animate();
 
 /* =============================================================================
-   BOOTSTRAP DA QUERYSTRING — tre modalità, in ordine di priorità:
+   BOOTSTRAP DA QUERYSTRING — sovrascrive il comportamento a checkbox: se
+   presente, deseleziona tutto e mostra SOLO l'oggetto indicato. In ordine
+   di priorità:
    1) ?ra=&dec=&dist=&name=   oggetto personalizzato, non fa parte del catalogo
    2) ?id=<id catalogo>       es. ?id=M42 (case-insensitive)
    3) ?pos=<indice numerico>  es. ?pos=3
-   Se nessuna delle tre si applica: primo oggetto del catalogo.
+   Se NESSUNA di queste è presente: nessuna sovrascrittura, si parte con la
+   lista a checkbox vuota (solo la Terra visibile) — l'utente sceglie con la
+   nuova interfaccia, non c'è più un oggetto caricato di default.
    ============================================================================= */
 const urlParams = new URLSearchParams(window.location.search);
 const parsedCustom = parseCustomObjectFromQuery(urlParams);
 
 if (parsedCustom) {
-  customEntry = parsedCustom;
-  showCustomOption(select, parsedCustom.name);
-  loadObject(customEntry);
-} else {
+  uncheckAllObjectItems(objectItems);
+  setDisplayedEntries([parsedCustom]);
+} else if (urlParams.has('id') || urlParams.has('pos')) {
   const startIndex = resolveStartIndex(CATALOG, urlParams);
-  select.value = startIndex;
-  loadObject(CATALOG[startIndex]);
+  uncheckAllObjectItems(objectItems);
+  setDisplayedEntries([CATALOG[startIndex]]);
+} else {
+  setDisplayedEntries([]);
 }
