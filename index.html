@@ -14,7 +14,14 @@
 <body>
 <div id="container">
   <div id="topbar">
-    <select id="objectSelect"></select>
+    <div id="objectPanel">
+      <input type="text" id="objectFilter" placeholder="Filtra oggetti…" autocomplete="off">
+      <div id="objectList"></div>
+      <div id="objectListActions">
+        <button id="applyBtn" type="button">Applica</button>
+        <button id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
     <select id="pivotSelect">
       <option value="earth">Perno: Terra</option>
       <option value="gc">Perno: Centro Galattico</option>
