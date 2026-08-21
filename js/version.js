@@ -7,4 +7,4 @@
    lì si disallinei da questo nel tempo (non c'è un passo di build che li
    terrebbe sincronizzati automaticamente).
    ============================================================================= */
-export const GM_VER = '0.6';
+export const GM_VER = '0.7';
