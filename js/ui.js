@@ -7,67 +7,114 @@
    main.js, che è il solo posto che conosce quello stato.
    ============================================================================= */
 
-export function populateObjectSelect(selectEl, catalog) {
-  catalog.forEach((entry, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = entry.name;
-    selectEl.appendChild(opt);
+/** Costruisce la lista di checkbox, una per oggetto del catalogo. Restituisce
+    un array di descrittori {index, entry, rowEl, checkboxEl, swatchEl} così
+    il chiamante (main.js) può leggere lo stato o assegnare colori senza
+    dover ripetere query DOM. */
+export function buildObjectList(containerEl, catalog) {
+  const items = [];
+  catalog.forEach((entry, index) => {
+    const row = document.createElement('label');
+    row.className = 'objectItem';
+    row.dataset.index = String(index);
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.dataset.index = String(index);
+
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch';
+
+    const labelText = document.createElement('span');
+    labelText.className = 'objLabel';
+    labelText.textContent = entry.name;
+
+    row.appendChild(checkbox);
+    row.appendChild(swatch);
+    row.appendChild(labelText);
+    containerEl.appendChild(row);
+
+    items.push({ index, entry, rowEl: row, checkboxEl: checkbox, swatchEl: swatch });
+  });
+  return items;
+}
+
+/** Filtro "LIKE %testo%" sul nome, case-insensitive: nasconde le righe che
+    non corrispondono, non le rimuove (lo stato dei checkbox nascosti resta
+    intatto). */
+export function filterObjectList(items, filterText) {
+  const needle = filterText.trim().toLowerCase();
+  items.forEach(({ rowEl, entry }) => {
+    const match = needle === '' || entry.name.toLowerCase().includes(needle);
+    rowEl.classList.toggle('hidden', !match);
   });
 }
 
-/** Inserisce (o aggiorna, se già presente) la voce dinamica per l'oggetto
-    personalizzato passato via querystring, in cima al menu, selezionata. */
-export function showCustomOption(selectEl, name) {
-  let opt = document.getElementById('customOption');
-  if (!opt) {
-    opt = document.createElement('option');
-    opt.id = 'customOption';
-    opt.value = 'custom';
-    selectEl.insertBefore(opt, selectEl.firstChild);
+/** Segna una riga come "visualizzata" con un pallino del colore assegnato al
+    marcatore, o la riporta allo stato neutro se colorHex è null. */
+export function setObjectItemDisplayed(item, colorHex) {
+  if (colorHex === null) {
+    item.rowEl.classList.remove('displayed');
+    item.swatchEl.style.background = '';
+  } else {
+    item.rowEl.classList.add('displayed');
+    item.swatchEl.style.background = '#' + colorHex.toString(16).padStart(6, '0');
   }
-  opt.textContent = name;
-  selectEl.value = 'custom';
 }
 
-export function updateInfoPanel(infoContentEl, entry) {
-  const uncStr = entry.distance_unc_ly
-    ? ` ± ${entry.distance_unc_ly.toLocaleString('it-IT')}`
-    : '';
-  const distStr = entry.distance_ly >= 1e6
-    ? (entry.distance_ly / 1e6).toLocaleString('it-IT', { maximumFractionDigits: 2 }) + ' milioni di anni luce'
-    : entry.distance_ly.toLocaleString('it-IT') + uncStr + ' anni luce';
-  infoContentEl.innerHTML = `
-    <h3>${entry.name}</h3>
-    <div class="row">${entry.type}</div>
-    <div class="row">Distanza dalla Terra: ${distStr}</div>
-    <div class="row">RA: ${entry.ra_deg.toFixed(4)}°  Dec: ${entry.dec_deg.toFixed(4)}° (J2000)</div>
-    <div class="warn">I marcatori 3D non sono in scala rispetto alla distanza reale (altrimenti sarebbero invisibili); indicano solo la posizione relativa.</div>
-    <div class="src">Fonte: ${entry.source}</div>
-  `;
+export function uncheckAllObjectItems(items) {
+  items.forEach(({ checkboxEl }) => { checkboxEl.checked = false; });
+}
+
+/** Pannello info: una sezione per ciascun oggetto attualmente visualizzato.
+    Con zero oggetti mostra un messaggio neutro (solo la Terra è visibile). */
+export function updateInfoPanel(infoContentEl, entries) {
+  if (!entries || entries.length === 0) {
+    infoContentEl.innerHTML = `<div class="row">Nessun oggetto selezionato — solo la Terra è visibile.</div>`;
+    return;
+  }
+  infoContentEl.innerHTML = entries.map(entry => {
+    const uncStr = entry.distance_unc_ly
+      ? ` ± ${entry.distance_unc_ly.toLocaleString('it-IT')}`
+      : '';
+    const distStr = entry.distance_ly >= 1e6
+      ? (entry.distance_ly / 1e6).toLocaleString('it-IT', { maximumFractionDigits: 2 }) + ' milioni di anni luce'
+      : entry.distance_ly.toLocaleString('it-IT') + uncStr + ' anni luce';
+    return `
+      <h3>${entry.name}</h3>
+      <div class="row">${entry.type}</div>
+      <div class="row">Distanza dalla Terra: ${distStr}</div>
+      <div class="row">RA: ${entry.ra_deg.toFixed(4)}°  Dec: ${entry.dec_deg.toFixed(4)}° (J2000)</div>
+      <div class="src">Fonte: ${entry.source}</div>
+    `;
+  }).join('<hr style="border-color: var(--border); margin:10px 0;">')
+    + `<div class="warn">I marcatori 3D non sono in scala rispetto alla distanza reale (altrimenti sarebbero invisibili); indicano solo la posizione relativa.</div>`;
 }
 
 /* Lo stato (collassato/espanso) non viene resettato cambiando oggetto —
    resta come l'utente l'ha impostato, è una preferenza di interfaccia, non
    legata al singolo oggetto. Per questo vive internamente qui (closure),
-   non tra lo stato applicativo di main.js. */
-export function setupInfoPanelCollapse(infoEl, infoToggleEl) {
-  let collapsed = false;
+   non tra lo stato applicativo di main.js. Riusabile per qualsiasi pannello
+   collassabile (pannello info, pannello controlli) — non solo per l'info. */
+export function setupCollapsiblePanel(panelEl, toggleEl, startCollapsed = false, collapsedIcon = 'i', expandedIcon = '−') {
+  let collapsed = startCollapsed;
 
   function setCollapsed(value) {
     collapsed = value;
-    infoEl.classList.toggle('collapsed', collapsed);
-    infoToggleEl.textContent = collapsed ? 'i' : '−';
-    infoToggleEl.title = collapsed ? 'Espandi' : 'Comprimi';
+    panelEl.classList.toggle('collapsed', collapsed);
+    toggleEl.textContent = collapsed ? collapsedIcon : expandedIcon;
+    toggleEl.title = collapsed ? 'Espandi' : 'Comprimi';
   }
 
-  infoToggleEl.addEventListener('click', (e) => {
+  toggleEl.addEventListener('click', (e) => {
     e.stopPropagation();
     setCollapsed(!collapsed);
   });
-  infoEl.addEventListener('click', () => {
+  panelEl.addEventListener('click', () => {
     if (collapsed) setCollapsed(false);
   });
+
+  setCollapsed(startCollapsed);
 }
 
 /** Popola il disclaimer in basso a destra. Riceve la versione come
