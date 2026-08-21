@@ -14,7 +14,7 @@ import { createOrbitControls } from './controls.js';
 import { createEarthMarker, createObjectMarker, updateObjectMarker, updateMarkerLine, removeObjectMarker, computeFraming, clampMarkerToMaxPixels } from './markers.js';
 import {
   buildObjectList, filterObjectList, setObjectItemDisplayed, uncheckAllObjectItems,
-  updateInfoPanel as renderInfoPanel, setupInfoPanelCollapse, setupResizeHandler, renderDisclaimer
+  updateInfoPanel as renderInfoPanel, setupCollapsiblePanel, setupResizeHandler, renderDisclaimer
 } from './ui.js';
 import { projectLabelToScreen } from './label-utils.js';
 
@@ -255,7 +255,12 @@ gridScaleSelect.addEventListener('change', () => {
 /* =============================================================================
    PANNELLO INFO COLLASSABILE + RESIZE + DISCLAIMER
    ============================================================================= */
-setupInfoPanelCollapse(document.getElementById('info'), document.getElementById('infoToggle'));
+setupCollapsiblePanel(document.getElementById('info'), document.getElementById('infoToggle'));
+// avviato COLLASSATO: la lista di 205 oggetti + filtro + pulsanti + due
+// select occupa molto spazio — su mobile, se partisse espanso, coprirebbe
+// gran parte del canvas e renderebbe difficile ruotare/zoomare finché non
+// lo si chiude a mano. L'utente lo apre quando vuole scegliere gli oggetti.
+setupCollapsiblePanel(document.getElementById('topbar'), document.getElementById('topbarToggle'), true);
 setupResizeHandler(camera, renderer, container);
 renderDisclaimer(document.getElementById('disclaimer'), GM_VER);
 

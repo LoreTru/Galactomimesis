@@ -13,35 +13,38 @@
 </head>
 <body>
 <div id="container">
-  <div id="topbar">
-    <div id="objectPanel">
-      <input type="text" id="objectFilter" placeholder="Filtra oggetti…" autocomplete="off">
-      <div id="objectList"></div>
-      <div id="objectListActions">
-        <button id="applyBtn" type="button">Applica</button>
-        <button id="resetBtn" type="button">Reset</button>
+  <div id="topbar" class="collapsiblePanel">
+    <button id="topbarToggle" class="panelToggle" title="Espandi">i</button>
+    <div id="topbarContent" class="panelContent">
+      <div id="objectPanel">
+        <input type="text" id="objectFilter" placeholder="Filtra oggetti…" autocomplete="off">
+        <div id="objectList"></div>
+        <div id="objectListActions">
+          <button id="applyBtn" type="button">Applica</button>
+          <button id="resetBtn" type="button">Reset</button>
+        </div>
       </div>
+      <select id="pivotSelect">
+        <option value="earth">Perno: Terra</option>
+        <option value="gc">Perno: Centro Galattico</option>
+      </select>
+      <select id="gridScaleSelect">
+        <option value="1">Griglia: 1× (Terra–oggetto)</option>
+        <option value="2">Griglia: 2×</option>
+        <option value="5">Griglia: 5×</option>
+        <option value="10">Griglia: 10×</option>
+        <option value="50">Griglia: 50×</option>
+        <option value="0.5">Griglia: 0.5×</option>
+      </select>
     </div>
-    <select id="pivotSelect">
-      <option value="earth">Perno: Terra</option>
-      <option value="gc">Perno: Centro Galattico</option>
-    </select>
-    <select id="gridScaleSelect">
-      <option value="1">Griglia: 1× (Terra–oggetto)</option>
-      <option value="2">Griglia: 2×</option>
-      <option value="5">Griglia: 5×</option>
-      <option value="10">Griglia: 10×</option>
-      <option value="50">Griglia: 50×</option>
-      <option value="0.5">Griglia: 0.5×</option>
-    </select>
   </div>
   <div id="hint">trascina per ruotare · rotella/pinch per zoom</div>
   <div id="disclaimer"></div>
   <div id="distlabel" style="display:none;"></div>
   <div id="armLabels"></div>
-  <div id="info">
-    <button id="infoToggle" title="Comprimi">−</button>
-    <div id="infoContent"></div>
+  <div id="info" class="collapsiblePanel">
+    <button id="infoToggle" class="panelToggle" title="Comprimi">−</button>
+    <div id="infoContent" class="panelContent"></div>
   </div>
 </div>
 

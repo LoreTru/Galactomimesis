@@ -94,24 +94,27 @@ export function updateInfoPanel(infoContentEl, entries) {
 /* Lo stato (collassato/espanso) non viene resettato cambiando oggetto —
    resta come l'utente l'ha impostato, è una preferenza di interfaccia, non
    legata al singolo oggetto. Per questo vive internamente qui (closure),
-   non tra lo stato applicativo di main.js. */
-export function setupInfoPanelCollapse(infoEl, infoToggleEl) {
-  let collapsed = false;
+   non tra lo stato applicativo di main.js. Riusabile per qualsiasi pannello
+   collassabile (pannello info, pannello controlli) — non solo per l'info. */
+export function setupCollapsiblePanel(panelEl, toggleEl, startCollapsed = false) {
+  let collapsed = startCollapsed;
 
   function setCollapsed(value) {
     collapsed = value;
-    infoEl.classList.toggle('collapsed', collapsed);
-    infoToggleEl.textContent = collapsed ? 'i' : '−';
-    infoToggleEl.title = collapsed ? 'Espandi' : 'Comprimi';
+    panelEl.classList.toggle('collapsed', collapsed);
+    toggleEl.textContent = collapsed ? 'i' : '−';
+    toggleEl.title = collapsed ? 'Espandi' : 'Comprimi';
   }
 
-  infoToggleEl.addEventListener('click', (e) => {
+  toggleEl.addEventListener('click', (e) => {
     e.stopPropagation();
     setCollapsed(!collapsed);
   });
-  infoEl.addEventListener('click', () => {
+  panelEl.addEventListener('click', () => {
     if (collapsed) setCollapsed(false);
   });
+
+  setCollapsed(startCollapsed);
 }
 
 /** Popola il disclaimer in basso a destra. Riceve la versione come
