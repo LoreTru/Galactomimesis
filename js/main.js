@@ -260,7 +260,7 @@ setupCollapsiblePanel(document.getElementById('info'), document.getElementById('
 // select occupa molto spazio — su mobile, se partisse espanso, coprirebbe
 // gran parte del canvas e renderebbe difficile ruotare/zoomare finché non
 // lo si chiude a mano. L'utente lo apre quando vuole scegliere gli oggetti.
-setupCollapsiblePanel(document.getElementById('topbar'), document.getElementById('topbarToggle'), true);
+setupCollapsiblePanel(document.getElementById('topbar'), document.getElementById('topbarToggle'), true, '☰', '−');
 setupResizeHandler(camera, renderer, container);
 renderDisclaimer(document.getElementById('disclaimer'), GM_VER);
 

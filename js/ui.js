@@ -96,13 +96,13 @@ export function updateInfoPanel(infoContentEl, entries) {
    legata al singolo oggetto. Per questo vive internamente qui (closure),
    non tra lo stato applicativo di main.js. Riusabile per qualsiasi pannello
    collassabile (pannello info, pannello controlli) — non solo per l'info. */
-export function setupCollapsiblePanel(panelEl, toggleEl, startCollapsed = false) {
+export function setupCollapsiblePanel(panelEl, toggleEl, startCollapsed = false, collapsedIcon = 'i', expandedIcon = '−') {
   let collapsed = startCollapsed;
 
   function setCollapsed(value) {
     collapsed = value;
     panelEl.classList.toggle('collapsed', collapsed);
-    toggleEl.textContent = collapsed ? 'i' : '−';
+    toggleEl.textContent = collapsed ? collapsedIcon : expandedIcon;
     toggleEl.title = collapsed ? 'Espandi' : 'Comprimi';
   }
 
